@@ -1,4 +1,5 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, forwardRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import './ShadowPuzzle.css'
 
 const ANIMALS = [
@@ -12,7 +13,7 @@ const ANIMALS = [
 const INITIAL_LOCKED = [false, false, false, true, true, true]
 
 const PIECE_SIZE = 180
-const EMOJI_SIZE = 140
+const EMOJI_SIZE  = 140
 const PART_HEIGHT = PIECE_SIZE / 3
 const SNAP_THRESHOLD = 65
 
@@ -33,18 +34,61 @@ function shuffled(arr) {
   return [...arr].sort(() => Math.random() - 0.5)
 }
 
-// ── 鍵カウンター（常時表示）──────────────────────────────────────────────────
-function KeyCounter({ count }) {
+// ── 鍵カウンター ──────────────────────────────────────────────────────────────
+// forwardRef で DOM rect を親から取得できるようにする
+const KeyCounter = forwardRef(function KeyCounter({ count }, ref) {
   return (
-    <div className="key-counter">
+    <div className="key-counter" ref={ref}>
       <span className="key-counter__icon">🔑</span>
       <span className="key-counter__count">{count}</span>
     </div>
   )
+})
+
+// ── 飛ぶ鍵アニメーション ──────────────────────────────────────────────────────
+// from/to は viewport 座標の中心点
+function FlyingKey({ from, to, onComplete }) {
+  const dx = to.x - from.x
+  const dy = to.y - from.y
+  const dist = Math.hypot(dx, dy)
+  // 放物線の頂点高さ：距離の35%、最大130px
+  const arcHeight = Math.min(dist * 0.35, 130)
+
+  return (
+    <motion.div
+      style={{
+        position: 'fixed',
+        // 要素の中心が from に来るよう 16px ずらす
+        left: from.x - 16,
+        top: from.y - 16,
+        width: 32,
+        height: 32,
+        fontSize: '1.6rem',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 9999,
+        pointerEvents: 'none',
+      }}
+      initial={{ x: 0, y: 0, scale: 1, opacity: 1, rotate: 0 }}
+      animate={{
+        x:       [0, dx / 2,            dx],
+        y:       [0, dy / 2 - arcHeight, dy],
+        scale:   [1, 1.8,              0.6],
+        opacity: [1, 1,                0],
+        rotate:  [0, -30,              0],
+      }}
+      transition={{ duration: 0.65, ease: 'easeInOut', times: [0, 0.5, 1] }}
+      onAnimationComplete={onComplete}
+    >
+      🔑
+    </motion.div>
+  )
 }
 
 // ── 選択画面 ──────────────────────────────────────────────────────────────────
-function SelectScreen({ animalIndex, lockedStatus, keyCount, onPrev, onNext, onStart, onUnlock }) {
+function SelectScreen({ animalIndex, lockedStatus, keyCount, isAnimating,
+                        onPrev, onNext, onStart, onUnlock }) {
   const n = ANIMALS.length
   const prevIdx = (animalIndex - 1 + n) % n
   const nextIdx = (animalIndex + 1) % n
@@ -57,6 +101,15 @@ function SelectScreen({ animalIndex, lockedStatus, keyCount, onPrev, onNext, onS
   const isPrevLocked    = lockedStatus[prevIdx]
   const isNextLocked    = lockedStatus[nextIdx]
   const canUnlock       = isCurrentLocked && keyCount > 0
+
+  // カルーセル中央の ref：鍵の飛び先として使う
+  const centerRef = useRef(null)
+
+  const handleUnlockClick = () => {
+    if (isAnimating) return
+    const rect = centerRef.current?.getBoundingClientRect()
+    onUnlock(rect)
+  }
 
   return (
     <div className="select-screen">
@@ -75,15 +128,22 @@ function SelectScreen({ animalIndex, lockedStatus, keyCount, onPrev, onNext, onS
             </div>
           </div>
 
-          {/* 現在の動物 */}
-          <div className="carousel-item carousel-item--center">
+          {/* 現在の動物（鍵の飛び先） */}
+          <div className="carousel-item carousel-item--center" ref={centerRef}>
             <div className={`carousel-item__preview${isCurrentLocked ? ' carousel-item__preview--locked' : ''}`}>
               <span key={animalIndex} className="carousel-item__emoji">{curr.emoji}</span>
-              {isCurrentLocked && (
-                <div className={`lock-overlay${canUnlock ? ' lock-overlay--tappable' : ''}`}>
-                  🔒
-                </div>
-              )}
+              <AnimatePresence>
+                {isCurrentLocked && (
+                  <motion.div
+                    className={`lock-overlay${canUnlock ? ' lock-overlay--tappable' : ''}`}
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0, transition: { duration: 0.25 } }}
+                  >
+                    🔒
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
             <span className="carousel-item__name">{curr.label}</span>
           </div>
@@ -112,7 +172,8 @@ function SelectScreen({ animalIndex, lockedStatus, keyCount, onPrev, onNext, onS
       {isCurrentLocked ? (
         <button
           className={`btn-start btn-start--lock${canUnlock ? ' btn-start--unlockable' : ' btn-start--disabled'}`}
-          onClick={onUnlock}
+          onClick={handleUnlockClick}
+          disabled={isAnimating}
         >
           {canUnlock ? '🔑 アンロック！' : '🔒 鍵が必要'}
         </button>
@@ -131,12 +192,11 @@ function PlayScreen({ animal, onBack, onComplete }) {
   const [trayOrder, setTrayOrder] = useState(() => shuffled([0, 1, 2]))
   const [drag, setDrag] = useState(null)
 
-  const slotRefs = useRef([null, null, null])
-  const keyEarnedRef = useRef(false)       // 同一セッション内で1度だけ鍵を付与
+  const slotRefs    = useRef([null, null, null])
+  const keyEarnedRef = useRef(false)
 
   const allPlaced = Object.values(placed).every(Boolean)
 
-  // パズルクリア時に鍵を1つ付与（リセットしても2回目は付与しない）
   useEffect(() => {
     if (allPlaced && !keyEarnedRef.current) {
       keyEarnedRef.current = true
@@ -253,7 +313,7 @@ function PlayScreen({ animal, onBack, onComplete }) {
         <p className="tray__label">ドラッグしてね！</p>
         <div className="tray__pieces">
           {trayOrder.map((sliceIndex) => {
-            const isPlaced = placed[sliceIndex]
+            const isPlaced   = placed[sliceIndex]
             const isDragging = drag?.sliceIndex === sliceIndex
             return (
               <div
@@ -281,6 +341,9 @@ export default function ShadowPuzzle() {
   const [animalIndex, setAnimalIndex] = useState(0)
   const [keyCount, setKeyCount] = useState(0)
   const [lockedStatus, setLockedStatus] = useState(INITIAL_LOCKED)
+  const [flyKey, setFlyKey] = useState(null) // { from, to, animalIdx }
+
+  const keyCounterRef = useRef(null)
 
   const prevAnimal = useCallback(() => {
     setAnimalIndex(i => (i - 1 + ANIMALS.length) % ANIMALS.length)
@@ -290,14 +353,38 @@ export default function ShadowPuzzle() {
     setAnimalIndex(i => (i + 1) % ANIMALS.length)
   }, [])
 
-  const handleUnlock = useCallback(() => {
+  // SelectScreen から targetRect（カルーセル中央の DOMRect）を受け取る
+  const handleUnlock = useCallback((targetRect) => {
+    if (flyKey) return // アニメーション中は無視
     if (keyCount > 0) {
-      setKeyCount(k => k - 1)
-      setLockedStatus(prev => prev.map((locked, i) => i === animalIndex ? false : locked))
+      const counterRect = keyCounterRef.current?.getBoundingClientRect()
+      if (counterRect && targetRect) {
+        setFlyKey({
+          from: {
+            x: counterRect.left + counterRect.width  / 2,
+            y: counterRect.top  + counterRect.height / 2,
+          },
+          to: {
+            x: targetRect.left + targetRect.width  / 2,
+            y: targetRect.top  + targetRect.height / 2,
+          },
+          animalIdx: animalIndex,
+        })
+        // アニメーション完了は FlyingKey の onAnimationComplete で処理
+      }
     } else {
       alert('鍵が足りません！')
     }
-  }, [keyCount, animalIndex])
+  }, [flyKey, keyCount, animalIndex])
+
+  // FlyingKey アニメーション完了時に状態を更新
+  const applyUnlock = useCallback(() => {
+    if (!flyKey) return
+    const idx = flyKey.animalIdx
+    setKeyCount(k => k - 1)
+    setLockedStatus(prev => prev.map((locked, i) => i === idx ? false : locked))
+    setFlyKey(null)
+  }, [flyKey])
 
   const handleComplete = useCallback(() => {
     setKeyCount(k => k + 1)
@@ -305,13 +392,26 @@ export default function ShadowPuzzle() {
 
   return (
     <>
-      <KeyCounter count={keyCount} />
+      <KeyCounter ref={keyCounterRef} count={keyCount} />
+
+      {/* 飛ぶ鍵（画面をまたぐので最上位に置く）*/}
+      <AnimatePresence>
+        {flyKey && (
+          <FlyingKey
+            key="flying-key"
+            from={flyKey.from}
+            to={flyKey.to}
+            onComplete={applyUnlock}
+          />
+        )}
+      </AnimatePresence>
 
       {screen === 'select' ? (
         <SelectScreen
           animalIndex={animalIndex}
           lockedStatus={lockedStatus}
           keyCount={keyCount}
+          isAnimating={!!flyKey}
           onPrev={prevAnimal}
           onNext={nextAnimal}
           onStart={() => setScreen('play')}
