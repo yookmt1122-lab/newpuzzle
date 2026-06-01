@@ -9,6 +9,7 @@ const ANIMALS = [
   { emoji: '🐼', label: 'パンダ' },
   { emoji: '🦊', label: 'キツネ' },
 ]
+const INITIAL_LOCKED = [false, false, false, true, true, true]
 
 const PIECE_SIZE = 180
 const EMOJI_SIZE = 140
@@ -32,11 +33,30 @@ function shuffled(arr) {
   return [...arr].sort(() => Math.random() - 0.5)
 }
 
+// ── 鍵カウンター（常時表示）──────────────────────────────────────────────────
+function KeyCounter({ count }) {
+  return (
+    <div className="key-counter">
+      <span className="key-counter__icon">🔑</span>
+      <span className="key-counter__count">{count}</span>
+    </div>
+  )
+}
+
 // ── 選択画面 ──────────────────────────────────────────────────────────────────
-function SelectScreen({ animalIndex, onPrev, onNext, onStart }) {
-  const prev = ANIMALS[(animalIndex - 1 + ANIMALS.length) % ANIMALS.length]
+function SelectScreen({ animalIndex, lockedStatus, keyCount, onPrev, onNext, onStart, onUnlock }) {
+  const n = ANIMALS.length
+  const prevIdx = (animalIndex - 1 + n) % n
+  const nextIdx = (animalIndex + 1) % n
+
+  const prev = ANIMALS[prevIdx]
   const curr = ANIMALS[animalIndex]
-  const next = ANIMALS[(animalIndex + 1) % ANIMALS.length]
+  const next = ANIMALS[nextIdx]
+
+  const isCurrentLocked = lockedStatus[animalIndex]
+  const isPrevLocked    = lockedStatus[prevIdx]
+  const isNextLocked    = lockedStatus[nextIdx]
+  const canUnlock       = isCurrentLocked && keyCount > 0
 
   return (
     <div className="select-screen">
@@ -47,15 +67,33 @@ function SelectScreen({ animalIndex, onPrev, onNext, onStart }) {
         <button className="carousel__btn" onClick={onPrev} aria-label="前の動物">◀</button>
 
         <div className="carousel-track">
+          {/* 前の動物 */}
           <div className="carousel-item carousel-item--side" onClick={onPrev} role="button">
-            <span>{prev.emoji}</span>
+            <div className="carousel-item__preview">
+              <span>{prev.emoji}</span>
+              {isPrevLocked && <span className="lock-badge">🔒</span>}
+            </div>
           </div>
+
+          {/* 現在の動物 */}
           <div className="carousel-item carousel-item--center">
-            <span key={animalIndex} className="carousel-item__emoji">{curr.emoji}</span>
+            <div className={`carousel-item__preview${isCurrentLocked ? ' carousel-item__preview--locked' : ''}`}>
+              <span key={animalIndex} className="carousel-item__emoji">{curr.emoji}</span>
+              {isCurrentLocked && (
+                <div className={`lock-overlay${canUnlock ? ' lock-overlay--tappable' : ''}`}>
+                  🔒
+                </div>
+              )}
+            </div>
             <span className="carousel-item__name">{curr.label}</span>
           </div>
+
+          {/* 次の動物 */}
           <div className="carousel-item carousel-item--side" onClick={onNext} role="button">
-            <span>{next.emoji}</span>
+            <div className="carousel-item__preview">
+              <span>{next.emoji}</span>
+              {isNextLocked && <span className="lock-badge">🔒</span>}
+            </div>
           </div>
         </div>
 
@@ -71,21 +109,40 @@ function SelectScreen({ animalIndex, onPrev, onNext, onStart }) {
         ))}
       </div>
 
-      <button className="btn-start" onClick={onStart}>
-        スタート！🎮
-      </button>
+      {isCurrentLocked ? (
+        <button
+          className={`btn-start btn-start--lock${canUnlock ? ' btn-start--unlockable' : ' btn-start--disabled'}`}
+          onClick={onUnlock}
+        >
+          {canUnlock ? '🔑 アンロック！' : '🔒 鍵が必要'}
+        </button>
+      ) : (
+        <button className="btn-start" onClick={onStart}>
+          スタート！🎮
+        </button>
+      )}
     </div>
   )
 }
 
 // ── プレイ画面 ────────────────────────────────────────────────────────────────
-function PlayScreen({ animal, onBack }) {
+function PlayScreen({ animal, onBack, onComplete }) {
   const [placed, setPlaced] = useState({ 0: false, 1: false, 2: false })
   const [trayOrder, setTrayOrder] = useState(() => shuffled([0, 1, 2]))
   const [drag, setDrag] = useState(null)
 
   const slotRefs = useRef([null, null, null])
+  const keyEarnedRef = useRef(false)       // 同一セッション内で1度だけ鍵を付与
+
   const allPlaced = Object.values(placed).every(Boolean)
+
+  // パズルクリア時に鍵を1つ付与（リセットしても2回目は付与しない）
+  useEffect(() => {
+    if (allPlaced && !keyEarnedRef.current) {
+      keyEarnedRef.current = true
+      onComplete()
+    }
+  }, [allPlaced, onComplete])
 
   const reset = useCallback(() => {
     setPlaced({ 0: false, 1: false, 2: false })
@@ -183,6 +240,7 @@ function PlayScreen({ animal, onBack }) {
         {allPlaced && (
           <div className="puzzle__complete">
             <span>🎉 やったー！ 🎉</span>
+            <p className="puzzle__complete-key">🔑 鍵を1つ手に入れた！</p>
             <div className="puzzle__complete-btns">
               <button className="btn-reset" onClick={reset}>もういちど！</button>
               <button className="btn-reset btn-reset--back" onClick={onBack}>ほかのどうぶつ</button>
@@ -221,6 +279,8 @@ function PlayScreen({ animal, onBack }) {
 export default function ShadowPuzzle() {
   const [screen, setScreen] = useState('select')
   const [animalIndex, setAnimalIndex] = useState(0)
+  const [keyCount, setKeyCount] = useState(0)
+  const [lockedStatus, setLockedStatus] = useState(INITIAL_LOCKED)
 
   const prevAnimal = useCallback(() => {
     setAnimalIndex(i => (i - 1 + ANIMALS.length) % ANIMALS.length)
@@ -230,22 +290,41 @@ export default function ShadowPuzzle() {
     setAnimalIndex(i => (i + 1) % ANIMALS.length)
   }, [])
 
-  if (screen === 'select') {
-    return (
-      <SelectScreen
-        animalIndex={animalIndex}
-        onPrev={prevAnimal}
-        onNext={nextAnimal}
-        onStart={() => setScreen('play')}
-      />
-    )
-  }
+  const handleUnlock = useCallback(() => {
+    if (keyCount > 0) {
+      setKeyCount(k => k - 1)
+      setLockedStatus(prev => prev.map((locked, i) => i === animalIndex ? false : locked))
+    } else {
+      alert('鍵が足りません！')
+    }
+  }, [keyCount, animalIndex])
+
+  const handleComplete = useCallback(() => {
+    setKeyCount(k => k + 1)
+  }, [])
 
   return (
-    <PlayScreen
-      key={animalIndex}
-      animal={ANIMALS[animalIndex]}
-      onBack={() => setScreen('select')}
-    />
+    <>
+      <KeyCounter count={keyCount} />
+
+      {screen === 'select' ? (
+        <SelectScreen
+          animalIndex={animalIndex}
+          lockedStatus={lockedStatus}
+          keyCount={keyCount}
+          onPrev={prevAnimal}
+          onNext={nextAnimal}
+          onStart={() => setScreen('play')}
+          onUnlock={handleUnlock}
+        />
+      ) : (
+        <PlayScreen
+          key={animalIndex}
+          animal={ANIMALS[animalIndex]}
+          onBack={() => setScreen('select')}
+          onComplete={handleComplete}
+        />
+      )}
+    </>
   )
 }
