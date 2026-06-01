@@ -7,28 +7,28 @@ const ANIMALS = [
   { emoji: '🐮', label: 'ウシ' },
 ]
 
-const PIECE_SIZE = 160  // emojis render at this px square
-const PART_HEIGHT = PIECE_SIZE / 3
-const SNAP_THRESHOLD = 60  // px radius for snapping
+const PIECE_SIZE = 180   // container width/height for one full emoji square
+const EMOJI_SIZE  = 140  // font-size — smaller than container so it's centered with room to spare
+const PART_HEIGHT = PIECE_SIZE / 3  // 60px per slice
+const SNAP_THRESHOLD = 65
 
 const PART_LABELS = ['頭', '体', '足']
 
-// Clips the emoji to show only one horizontal slice (index 0/1/2)
+// Shows one horizontal slice of the emoji (index 0=head, 1=body, 2=legs).
+// The emoji is centered in a PIECE_SIZE×PIECE_SIZE inner div so glyph overruns
+// don't get clipped — only height is clipped by the outer div.
 function EmojiSlice({ emoji, sliceIndex, silhouette = false }) {
   return (
     <div
       className="emoji-slice"
       style={{ height: PART_HEIGHT, width: PIECE_SIZE }}
     >
-      <span
-        className={silhouette ? 'emoji-slice__text emoji-slice__text--shadow' : 'emoji-slice__text'}
-        style={{
-          fontSize: PIECE_SIZE,
-          top: -(sliceIndex * PART_HEIGHT),
-        }}
+      <div
+        className={`emoji-slice__inner${silhouette ? ' emoji-slice__inner--shadow' : ''}`}
+        style={{ top: -(sliceIndex * PART_HEIGHT), width: PIECE_SIZE, height: PIECE_SIZE }}
       >
-        {emoji}
-      </span>
+        <span style={{ fontSize: EMOJI_SIZE }}>{emoji}</span>
+      </div>
     </div>
   )
 }
