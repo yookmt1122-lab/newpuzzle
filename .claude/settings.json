@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./.env.local)",
+      "Read(./.env.development)",
+      "Read(./.env.production)",
+      "Read(./.env.test)",
+      "Read(./node_modules/**)",
+      "Read(./.git/**)",
+      "Read(./secrets/**)",
+      "Read(./private/**)",
+      "Read(./config/credentials.json)",
+      "Read(./*.pem)",
+      "Read(./*.key)"
+    ]
+  }
+}

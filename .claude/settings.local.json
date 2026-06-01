@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node build.js)",
+      "Bash(npm run *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(npm --version)",
+      "Bash(npm create *)",
+      "Bash(npm install *)",
+      "Bash(git init *)"
+    ],
+    "deny": [
+      "Bash(rm *)",
+      "Bash(rm -*)",
+      "Bash(del *)",
+      "Bash(rd *)"
+    ],
+    "defaultMode": "acceptEdits"
+  }
+}
