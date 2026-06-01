@@ -440,8 +440,8 @@ export default function ShadowPuzzle() {
       <KeyCounter ref={keyCounterRef} count={keyCount} />
 
       {/* デバッグ用リセットボタン（左下固定）*/}
-      <button className="btn-debug-reset" onClick={handleDebugReset}>
-        🗑 リセット
+      <button className="btn-debug-reset" onClick={handleDebugReset} aria-label="データをリセット">
+        🗑
       </button>
 
       {/* 飛ぶ鍵（画面をまたぐので最上位に置く）*/}
