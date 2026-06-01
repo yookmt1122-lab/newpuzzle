@@ -338,16 +338,40 @@ function PlayScreen({ animal, clearCount, onBack, onComplete }) {
   )
 }
 
+// ── localStorage キー ─────────────────────────────────────────────────────────
+const LS = {
+  keyCount:    'puzzle_keyCount',
+  locked:      'puzzle_lockedStatus',
+  clearCount:  'puzzle_clearCount',
+}
+
+function lsGet(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key)
+    return raw !== null ? JSON.parse(raw) : fallback
+  } catch {
+    return fallback
+  }
+}
+
 // ── ルート ────────────────────────────────────────────────────────────────────
 export default function ShadowPuzzle() {
   const [screen, setScreen] = useState('select')
   const [animalIndex, setAnimalIndex] = useState(0)
-  const [keyCount, setKeyCount] = useState(0)
-  const [lockedStatus, setLockedStatus] = useState(INITIAL_LOCKED)
-  const [flyKey, setFlyKey]       = useState(null) // { from, to, animalIdx }
-  const [clearCount, setClearCount] = useState(0)    // 累計クリア数
+
+  // localStorage から初期値を復元（なければデフォルト）
+  const [keyCount,     setKeyCount]     = useState(() => lsGet(LS.keyCount,   0))
+  const [lockedStatus, setLockedStatus] = useState(() => lsGet(LS.locked,     INITIAL_LOCKED))
+  const [clearCount,   setClearCount]   = useState(() => lsGet(LS.clearCount, 0))
+
+  const [flyKey, setFlyKey] = useState(null)
 
   const keyCounterRef = useRef(null)
+
+  // 状態が変わるたびに localStorage へ保存
+  useEffect(() => { localStorage.setItem(LS.keyCount,   JSON.stringify(keyCount))     }, [keyCount])
+  useEffect(() => { localStorage.setItem(LS.locked,     JSON.stringify(lockedStatus)) }, [lockedStatus])
+  useEffect(() => { localStorage.setItem(LS.clearCount, JSON.stringify(clearCount))   }, [clearCount])
 
   // 3クリアごとに鍵を1つ付与
   useEffect(() => {
@@ -355,6 +379,16 @@ export default function ShadowPuzzle() {
       setKeyCount(k => k + 1)
     }
   }, [clearCount])
+
+  // デバッグ用：全データをリセット
+  const handleDebugReset = useCallback(() => {
+    localStorage.clear()
+    setKeyCount(0)
+    setLockedStatus(INITIAL_LOCKED)
+    setClearCount(0)
+    setScreen('select')
+    setAnimalIndex(0)
+  }, [])
 
   const prevAnimal = useCallback(() => {
     setAnimalIndex(i => (i - 1 + ANIMALS.length) % ANIMALS.length)
@@ -404,6 +438,11 @@ export default function ShadowPuzzle() {
   return (
     <>
       <KeyCounter ref={keyCounterRef} count={keyCount} />
+
+      {/* デバッグ用リセットボタン（左下固定）*/}
+      <button className="btn-debug-reset" onClick={handleDebugReset}>
+        🗑 リセット
+      </button>
 
       {/* 飛ぶ鍵（画面をまたぐので最上位に置く）*/}
       <AnimatePresence>
