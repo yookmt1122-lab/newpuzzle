@@ -187,7 +187,7 @@ function SelectScreen({ animalIndex, lockedStatus, keyCount, isAnimating,
 }
 
 // ── プレイ画面 ────────────────────────────────────────────────────────────────
-function PlayScreen({ animal, onBack, onComplete }) {
+function PlayScreen({ animal, clearCount, onBack, onComplete }) {
   const [placed, setPlaced] = useState({ 0: false, 1: false, 2: false })
   const [trayOrder, setTrayOrder] = useState(() => shuffled([0, 1, 2]))
   const [drag, setDrag] = useState(null)
@@ -300,7 +300,10 @@ function PlayScreen({ animal, onBack, onComplete }) {
         {allPlaced && (
           <div className="puzzle__complete">
             <span>🎉 やったー！ 🎉</span>
-            <p className="puzzle__complete-key">🔑 鍵を1つ手に入れた！</p>
+            {clearCount % 3 === 0
+              ? <p className="puzzle__complete-key">🔑 鍵を1つ手に入れた！</p>
+              : <p className="puzzle__complete-key">あと {3 - (clearCount % 3)} かいクリアで鍵ゲット！</p>
+            }
             <div className="puzzle__complete-btns">
               <button className="btn-reset" onClick={reset}>もういちど！</button>
               <button className="btn-reset btn-reset--back" onClick={onBack}>ほかのどうぶつ</button>
@@ -341,9 +344,17 @@ export default function ShadowPuzzle() {
   const [animalIndex, setAnimalIndex] = useState(0)
   const [keyCount, setKeyCount] = useState(0)
   const [lockedStatus, setLockedStatus] = useState(INITIAL_LOCKED)
-  const [flyKey, setFlyKey] = useState(null) // { from, to, animalIdx }
+  const [flyKey, setFlyKey]       = useState(null) // { from, to, animalIdx }
+  const [clearCount, setClearCount] = useState(0)    // 累計クリア数
 
   const keyCounterRef = useRef(null)
+
+  // 3クリアごとに鍵を1つ付与
+  useEffect(() => {
+    if (clearCount > 0 && clearCount % 3 === 0) {
+      setKeyCount(k => k + 1)
+    }
+  }, [clearCount])
 
   const prevAnimal = useCallback(() => {
     setAnimalIndex(i => (i - 1 + ANIMALS.length) % ANIMALS.length)
@@ -387,7 +398,7 @@ export default function ShadowPuzzle() {
   }, [flyKey])
 
   const handleComplete = useCallback(() => {
-    setKeyCount(k => k + 1)
+    setClearCount(prev => prev + 1)
   }, [])
 
   return (
@@ -421,6 +432,7 @@ export default function ShadowPuzzle() {
         <PlayScreen
           key={animalIndex}
           animal={ANIMALS[animalIndex]}
+          clearCount={clearCount}
           onBack={() => setScreen('select')}
           onComplete={handleComplete}
         />
