@@ -192,10 +192,6 @@
   justify-content: center;
 }
 
-.piece:hover:not(.piece--placed):not(.piece--dragging) {
-  transform: translateY(-10px) rotate(-2deg) scale(1.04);
-  filter: drop-shadow(0 12px 20px rgba(255, 107, 157, 0.55));
-}
 
 .piece--placed {
   opacity: 0;
