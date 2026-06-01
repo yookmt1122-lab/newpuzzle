@@ -32,33 +32,65 @@ function shuffled(arr) {
   return [...arr].sort(() => Math.random() - 0.5)
 }
 
-export default function ShadowPuzzle() {
-  const [animalIndex, setAnimalIndex] = useState(0)
-  const animal = ANIMALS[animalIndex]
+// ── 選択画面 ──────────────────────────────────────────────────────────────────
+function SelectScreen({ animalIndex, onPrev, onNext, onStart }) {
+  const prev = ANIMALS[(animalIndex - 1 + ANIMALS.length) % ANIMALS.length]
+  const curr = ANIMALS[animalIndex]
+  const next = ANIMALS[(animalIndex + 1) % ANIMALS.length]
 
+  return (
+    <div className="select-screen">
+      <h1 className="puzzle__title">かげえパズル</h1>
+      <p className="select__subtitle">どうぶつをえらんでね！</p>
+
+      <div className="select__row">
+        <button className="carousel__btn" onClick={onPrev} aria-label="前の動物">◀</button>
+
+        <div className="carousel-track">
+          <div className="carousel-item carousel-item--side" onClick={onPrev} role="button">
+            <span>{prev.emoji}</span>
+          </div>
+          <div className="carousel-item carousel-item--center">
+            <span key={animalIndex} className="carousel-item__emoji">{curr.emoji}</span>
+            <span className="carousel-item__name">{curr.label}</span>
+          </div>
+          <div className="carousel-item carousel-item--side" onClick={onNext} role="button">
+            <span>{next.emoji}</span>
+          </div>
+        </div>
+
+        <button className="carousel__btn" onClick={onNext} aria-label="次の動物">▶</button>
+      </div>
+
+      <div className="carousel__dots">
+        {ANIMALS.map((_, i) => (
+          <span
+            key={i}
+            className={`carousel__dot${i === animalIndex ? ' carousel__dot--active' : ''}`}
+          />
+        ))}
+      </div>
+
+      <button className="btn-start" onClick={onStart}>
+        スタート！🎮
+      </button>
+    </div>
+  )
+}
+
+// ── プレイ画面 ────────────────────────────────────────────────────────────────
+function PlayScreen({ animal, onBack }) {
   const [placed, setPlaced] = useState({ 0: false, 1: false, 2: false })
   const [trayOrder, setTrayOrder] = useState(() => shuffled([0, 1, 2]))
   const [drag, setDrag] = useState(null)
-  const [carouselKey, setCarouselKey] = useState(0)
 
   const slotRefs = useRef([null, null, null])
-
   const allPlaced = Object.values(placed).every(Boolean)
 
-  const changeAnimal = useCallback((idx) => {
-    setAnimalIndex(idx)
+  const reset = useCallback(() => {
     setPlaced({ 0: false, 1: false, 2: false })
     setTrayOrder(shuffled([0, 1, 2]))
-    setCarouselKey(k => k + 1)
   }, [])
-
-  const prevAnimal = useCallback(() => {
-    changeAnimal((animalIndex - 1 + ANIMALS.length) % ANIMALS.length)
-  }, [animalIndex, changeAnimal])
-
-  const nextAnimal = useCallback(() => {
-    changeAnimal((animalIndex + 1) % ANIMALS.length)
-  }, [animalIndex, changeAnimal])
 
   const startDrag = useCallback((e, sliceIndex) => {
     if (placed[sliceIndex]) return
@@ -105,11 +137,6 @@ export default function ShadowPuzzle() {
     }
   }, [drag, onMove, onRelease])
 
-  const reset = useCallback(() => {
-    setPlaced({ 0: false, 1: false, 2: false })
-    setTrayOrder(shuffled([0, 1, 2]))
-  }, [])
-
   const floatingPiece = drag && (
     <div
       className="piece piece--floating"
@@ -126,23 +153,14 @@ export default function ShadowPuzzle() {
 
   return (
     <main className="puzzle">
-      <h1 className="puzzle__title">かげえパズル</h1>
-
-      {/* Looping carousel */}
-      <div className="carousel">
-        <button className="carousel__btn carousel__btn--prev" onClick={prevAnimal} aria-label="前の動物">
-          ◀
-        </button>
-        <div className="carousel__center">
-          <span key={carouselKey} className="carousel__emoji">{animal.emoji}</span>
-          <span className="carousel__name">{animal.label}</span>
+      <div className="play__header">
+        <button className="btn-back" onClick={onBack}>◀ もどる</button>
+        <div className="play__animal">
+          <span>{animal.emoji}</span>
+          <span className="play__animal-name">{animal.label}</span>
         </div>
-        <button className="carousel__btn carousel__btn--next" onClick={nextAnimal} aria-label="次の動物">
-          ▶
-        </button>
       </div>
 
-      {/* Silhouette stage */}
       <section className="puzzle__stage">
         <p className="stage__label">ここにはめよう！</p>
         <div className={`stage__slots${drag ? ' stage__slots--active' : ''}`}>
@@ -165,12 +183,14 @@ export default function ShadowPuzzle() {
         {allPlaced && (
           <div className="puzzle__complete">
             <span>🎉 やったー！ 🎉</span>
-            <button className="btn-reset" onClick={reset}>もういちど！</button>
+            <div className="puzzle__complete-btns">
+              <button className="btn-reset" onClick={reset}>もういちど！</button>
+              <button className="btn-reset btn-reset--back" onClick={onBack}>ほかのどうぶつ</button>
+            </div>
           </div>
         )}
       </section>
 
-      {/* Piece tray */}
       <section className="puzzle__tray">
         <p className="tray__label">ドラッグしてね！</p>
         <div className="tray__pieces">
@@ -194,5 +214,38 @@ export default function ShadowPuzzle() {
 
       {floatingPiece}
     </main>
+  )
+}
+
+// ── ルート ────────────────────────────────────────────────────────────────────
+export default function ShadowPuzzle() {
+  const [screen, setScreen] = useState('select')
+  const [animalIndex, setAnimalIndex] = useState(0)
+
+  const prevAnimal = useCallback(() => {
+    setAnimalIndex(i => (i - 1 + ANIMALS.length) % ANIMALS.length)
+  }, [])
+
+  const nextAnimal = useCallback(() => {
+    setAnimalIndex(i => (i + 1) % ANIMALS.length)
+  }, [])
+
+  if (screen === 'select') {
+    return (
+      <SelectScreen
+        animalIndex={animalIndex}
+        onPrev={prevAnimal}
+        onNext={nextAnimal}
+        onStart={() => setScreen('play')}
+      />
+    )
+  }
+
+  return (
+    <PlayScreen
+      key={animalIndex}
+      animal={ANIMALS[animalIndex]}
+      onBack={() => setScreen('select')}
+    />
   )
 }
