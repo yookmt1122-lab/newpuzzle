@@ -5,12 +5,18 @@
 }
 
 body {
-  font-family: sans-serif;
-  background: #1a1a2e;
-  color: #eee;
+  font-family: 'Rounded Mplus 1c', 'M PLUS Rounded 1c', 'Hiragino Maru Gothic Pro',
+               'Segoe UI', Meiryo, sans-serif;
+  background:
+    radial-gradient(circle at 15% 25%, #FFD6E8 0%, transparent 40%),
+    radial-gradient(circle at 85% 10%, #C8F0FF 0%, transparent 40%),
+    radial-gradient(circle at 70% 85%, #FFFACD 0%, transparent 40%),
+    radial-gradient(circle at 20% 80%, #D4F5C4 0%, transparent 40%),
+    #FFF9F0;
+  color: #333;
   min-height: 100vh;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
 }
 
