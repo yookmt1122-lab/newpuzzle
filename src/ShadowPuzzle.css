@@ -190,9 +190,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.6);
-  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.08), 0 6px 18px rgba(0, 0, 0, 0.08);
 }
 
 .piece:hover:not(.piece--placed):not(.piece--dragging) {
@@ -215,8 +212,6 @@
   pointer-events: none;
   z-index: 9999;
   cursor: grabbing;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.5);
   filter: drop-shadow(0 14px 24px rgba(255, 107, 157, 0.7));
 }
 
