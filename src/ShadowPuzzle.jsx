@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import './ShadowPuzzle.css'
 
 const ANIMALS = [
+  { emoji: '🐙', label: 'タコ' },
   { emoji: '🦁', label: 'ライオン' },
   { emoji: '🐘', label: 'ゾウ' },
   { emoji: '🐮', label: 'ウシ' },
@@ -10,7 +11,7 @@ const ANIMALS = [
   { emoji: '🐼', label: 'パンダ' },
   { emoji: '🦊', label: 'キツネ' },
 ]
-const INITIAL_LOCKED = [false, false, false, true, true, true]
+const INITIAL_LOCKED = [false, false, false, false, true, true, true]
 
 const PIECE_SIZE = 180
 const EMOJI_SIZE  = 140
