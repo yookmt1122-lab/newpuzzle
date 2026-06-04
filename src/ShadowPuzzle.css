@@ -17,6 +17,25 @@
   opacity: 0.7;
 }
 
+/* ── サウンドトグル ────────────────────────────────────────────────────────── */
+.btn-sound-toggle {
+  position: fixed;
+  bottom: 14px;
+  right: 14px;
+  z-index: 1000;
+  padding: 4px;
+  border: none;
+  background: none;
+  font-size: 1.1rem;
+  opacity: 0.45;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn-sound-toggle:hover {
+  opacity: 1;
+}
+
 /* ── 鍵カウンター ─────────────────────────────────────────────────────────── */
 .key-counter {
   position: fixed;

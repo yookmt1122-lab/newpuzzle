@@ -1,6 +1,10 @@
 import { useState, useRef, useCallback, useEffect, forwardRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import './ShadowPuzzle.css'
+import {
+  playSnap, playComplete, playKeyEarned, playKeyFly, playUnlock, playClick,
+  startBgm, stopBgm, setMuted,
+} from './sounds.js'
 
 const ANIMALS = [
   { emoji: '🐙', label: 'タコ' },
@@ -213,6 +217,7 @@ function PlayScreen({ animal, clearCount, onBack, onComplete }) {
   useEffect(() => {
     if (allPlaced && !keyEarnedRef.current) {
       keyEarnedRef.current = true
+      playComplete()
       onComplete()
     }
   }, [allPlaced, onComplete])
@@ -248,6 +253,7 @@ function PlayScreen({ animal, clearCount, onBack, onComplete }) {
       const cy = rect.top + rect.height / 2
       if (Math.hypot(x - cx, y - cy) < SNAP_THRESHOLD && targetIndex === sliceIndex) {
         setPlaced(prev => ({ ...prev, [sliceIndex]: true }))
+        playSnap()
       }
     })
     setDrag(null)
@@ -385,8 +391,25 @@ export default function ShadowPuzzle() {
   const [clearCount,   setClearCount]   = useState(() => lsGet(LS.clearCount, 0))
 
   const [flyKey, setFlyKey] = useState(null)
+  const [soundOn, setSoundOn] = useState(true)
 
   const keyCounterRef = useRef(null)
+
+  useEffect(() => {
+    const start = () => startBgm()
+    window.addEventListener('pointerdown', start, { once: true })
+    return () => window.removeEventListener('pointerdown', start)
+  }, [])
+
+  const toggleSound = useCallback(() => {
+    setSoundOn(prev => {
+      const next = !prev
+      setMuted(!next)
+      if (next) startBgm()
+      else stopBgm()
+      return next
+    })
+  }, [])
 
   // 状態が変わるたびに localStorage へ保存
   useEffect(() => { localStorage.setItem(LS.keyCount,   JSON.stringify(keyCount))     }, [keyCount])
@@ -397,6 +420,7 @@ export default function ShadowPuzzle() {
   useEffect(() => {
     if (clearCount > 0 && clearCount % 3 === 0) {
       setKeyCount(k => k + 1)
+      setTimeout(playKeyEarned, 700)
     }
   }, [clearCount])
 
@@ -411,10 +435,12 @@ export default function ShadowPuzzle() {
   }, [])
 
   const prevAnimal = useCallback(() => {
+    playClick()
     setAnimalIndex(i => (i - 1 + ANIMALS.length) % ANIMALS.length)
   }, [])
 
   const nextAnimal = useCallback(() => {
+    playClick()
     setAnimalIndex(i => (i + 1) % ANIMALS.length)
   }, [])
 
@@ -422,6 +448,7 @@ export default function ShadowPuzzle() {
   const handleUnlock = useCallback((targetRect) => {
     if (flyKey) return // アニメーション中は無視
     if (keyCount > 0) {
+      playKeyFly()
       const counterRect = keyCounterRef.current?.getBoundingClientRect()
       if (counterRect && targetRect) {
         setFlyKey({
@@ -449,6 +476,7 @@ export default function ShadowPuzzle() {
     setKeyCount(k => k - 1)
     setLockedStatus(prev => prev.map((locked, i) => i === idx ? false : locked))
     setFlyKey(null)
+    playUnlock()
   }, [flyKey])
 
   const handleComplete = useCallback(() => {
@@ -462,6 +490,11 @@ export default function ShadowPuzzle() {
       {/* デバッグ用リセットボタン（左下固定）*/}
       <button className="btn-debug-reset" onClick={handleDebugReset} aria-label="データをリセット">
         🗑
+      </button>
+
+      {/* サウンドトグル（右下固定）*/}
+      <button className="btn-sound-toggle" onClick={toggleSound} aria-label="サウンドトグル">
+        {soundOn ? '🔊' : '🔇'}
       </button>
 
       {/* 飛ぶ鍵（画面をまたぐので最上位に置く）*/}
