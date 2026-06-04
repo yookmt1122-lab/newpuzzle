@@ -80,9 +80,8 @@ export function playClick() {
 let bgmPlaying = false
 let bgmTid = null
 
-const TEMPO = 0.27
-
-const MELODY = [
+const SELECT_TEMPO = 0.27
+const SELECT_MELODY = [
   [523, 1], [659, 1], [784, 1], [659, 1],
   [523, 1], [659, 1], [523, 2],
   [587, 1], [784, 1], [880, 1], [784, 1],
@@ -93,18 +92,32 @@ const MELODY = [
   [523, 2], [0, 2],
 ]
 
-function scheduleBgm(idx) {
+const PLAY_TEMPO = 0.19
+const PLAY_MELODY = [
+  [784, 1], [784, 0.5], [880, 0.5], [784, 1], [698, 1],
+  [659, 2], [0, 1],
+  [698, 1], [698, 0.5], [784, 0.5], [698, 1], [587, 1],
+  [523, 2], [0, 1],
+  [784, 1], [880, 1], [1047, 1], [880, 1],
+  [784, 1], [698, 1], [784, 2],
+  [659, 1], [698, 1], [659, 1], [587, 1],
+  [523, 2], [0, 2],
+]
+
+function scheduleBgm(idx, melody, tempo) {
   if (!bgmPlaying) return
-  const [freq, beats] = MELODY[idx % MELODY.length]
-  if (freq > 0 && !muted) tone(freq, beats * TEMPO * 0.82, 0, 0.15, 'triangle')
-  bgmTid = setTimeout(() => scheduleBgm((idx + 1) % MELODY.length), beats * TEMPO * 1000)
+  const [freq, beats] = melody[idx % melody.length]
+  if (freq > 0 && !muted) tone(freq, beats * tempo * 0.82, 0, 0.15, 'triangle')
+  bgmTid = setTimeout(() => scheduleBgm((idx + 1) % melody.length, melody, tempo), beats * tempo * 1000)
 }
 
-export function startBgm() {
-  if (bgmPlaying) return
+export function startBgm(type = 'select') {
+  stopBgm()
   resume()
   bgmPlaying = true
-  scheduleBgm(0)
+  const melody = type === 'play' ? PLAY_MELODY : SELECT_MELODY
+  const tempo  = type === 'play' ? PLAY_TEMPO  : SELECT_TEMPO
+  scheduleBgm(0, melody, tempo)
 }
 
 export function stopBgm() {

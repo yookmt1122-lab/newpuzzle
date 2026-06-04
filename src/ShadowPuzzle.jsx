@@ -31,15 +31,26 @@ const INITIAL_LOCKED = [
 
 const PIECE_SIZE = 180
 const EMOJI_SIZE  = 140
-const PART_HEIGHT = PIECE_SIZE / 3
-const SNAP_THRESHOLD = 65
 
-function EmojiSlice({ emoji, sliceIndex, silhouette = false }) {
+const DIFFICULTY_OPTIONS = [
+  { key: 'easy',   nRows: 3, nCols: 1, label: '3ピース' },
+  { key: 'medium', nRows: 3, nCols: 2, label: '6ピース' },
+  { key: 'hard',   nRows: 3, nCols: 4, label: '12ピース' },
+]
+
+function EmojiSlice({ emoji, row, col, nRows, nCols, silhouette = false }) {
+  const cellW = PIECE_SIZE / nCols
+  const cellH = PIECE_SIZE / nRows
   return (
-    <div className="emoji-slice" style={{ height: PART_HEIGHT, width: PIECE_SIZE }}>
+    <div className="emoji-slice" style={{ width: cellW, height: cellH }}>
       <div
         className={`emoji-slice__inner${silhouette ? ' emoji-slice__inner--shadow' : ''}`}
-        style={{ top: -(sliceIndex * PART_HEIGHT), width: PIECE_SIZE, height: PIECE_SIZE }}
+        style={{
+          left: -(col * cellW),
+          top:  -(row * cellH),
+          width: PIECE_SIZE,
+          height: PIECE_SIZE,
+        }}
       >
         <span style={{ fontSize: EMOJI_SIZE }}>{emoji}</span>
       </div>
@@ -52,7 +63,6 @@ function shuffled(arr) {
 }
 
 // ── 鍵カウンター ──────────────────────────────────────────────────────────────
-// forwardRef で DOM rect を親から取得できるようにする
 const KeyCounter = forwardRef(function KeyCounter({ count }, ref) {
   return (
     <div className="key-counter" ref={ref}>
@@ -63,19 +73,16 @@ const KeyCounter = forwardRef(function KeyCounter({ count }, ref) {
 })
 
 // ── 飛ぶ鍵アニメーション ──────────────────────────────────────────────────────
-// from/to は viewport 座標の中心点
 function FlyingKey({ from, to, onComplete }) {
   const dx = to.x - from.x
   const dy = to.y - from.y
   const dist = Math.hypot(dx, dy)
-  // 放物線の頂点高さ：距離の35%、最大130px
   const arcHeight = Math.min(dist * 0.35, 130)
 
   return (
     <motion.div
       style={{
         position: 'fixed',
-        // 要素の中心が from に来るよう 16px ずらす
         left: from.x - 16,
         top: from.y - 16,
         width: 32,
@@ -89,11 +96,11 @@ function FlyingKey({ from, to, onComplete }) {
       }}
       initial={{ x: 0, y: 0, scale: 1, opacity: 1, rotate: 0 }}
       animate={{
-        x:       [0, dx / 2,            dx],
-        y:       [0, dy / 2 - arcHeight, dy],
-        scale:   [1, 1.8,              0.6],
-        opacity: [1, 1,                0],
-        rotate:  [0, -30,              0],
+        x:       [0, dx / 2,             dx],
+        y:       [0, dy / 2 - arcHeight,  dy],
+        scale:   [1, 1.8,               0.6],
+        opacity: [1, 1,                  0],
+        rotate:  [0, -30,                0],
       }}
       transition={{ duration: 0.65, ease: 'easeInOut', times: [0, 0.5, 1] }}
       onAnimationComplete={onComplete}
@@ -105,7 +112,7 @@ function FlyingKey({ from, to, onComplete }) {
 
 // ── 選択画面 ──────────────────────────────────────────────────────────────────
 function SelectScreen({ animalIndex, lockedStatus, keyCount, isAnimating,
-                        onPrev, onNext, onStart, onUnlock }) {
+                        difficulty, onPrev, onNext, onStart, onUnlock, onDifficultyChange }) {
   const n = ANIMALS.length
   const prevIdx = (animalIndex - 1 + n) % n
   const nextIdx = (animalIndex + 1) % n
@@ -119,7 +126,6 @@ function SelectScreen({ animalIndex, lockedStatus, keyCount, isAnimating,
   const isNextLocked    = lockedStatus[nextIdx]
   const canUnlock       = isCurrentLocked && keyCount > 0
 
-  // カルーセル中央の ref：鍵の飛び先として使う
   const centerRef = useRef(null)
 
   const handleUnlockClick = () => {
@@ -137,7 +143,6 @@ function SelectScreen({ animalIndex, lockedStatus, keyCount, isAnimating,
         <button className="carousel__btn" onClick={onPrev} aria-label="前の動物">◀</button>
 
         <div className="carousel-track">
-          {/* 前の動物 */}
           <div className="carousel-item carousel-item--side" onClick={onPrev} role="button">
             <div className="carousel-item__preview">
               <span>{prev.emoji}</span>
@@ -145,7 +150,6 @@ function SelectScreen({ animalIndex, lockedStatus, keyCount, isAnimating,
             </div>
           </div>
 
-          {/* 現在の動物（鍵の飛び先） */}
           <div className="carousel-item carousel-item--center" ref={centerRef}>
             <div className={`carousel-item__preview${isCurrentLocked ? ' carousel-item__preview--locked' : ''}`}>
               <span key={animalIndex} className="carousel-item__emoji">{curr.emoji}</span>
@@ -165,7 +169,6 @@ function SelectScreen({ animalIndex, lockedStatus, keyCount, isAnimating,
             <span className="carousel-item__name">{curr.label}</span>
           </div>
 
-          {/* 次の動物 */}
           <div className="carousel-item carousel-item--side" onClick={onNext} role="button">
             <div className="carousel-item__preview">
               <span>{next.emoji}</span>
@@ -183,6 +186,18 @@ function SelectScreen({ animalIndex, lockedStatus, keyCount, isAnimating,
             key={i}
             className={`carousel__dot${i === animalIndex ? ' carousel__dot--active' : ''}`}
           />
+        ))}
+      </div>
+
+      <div className="difficulty-selector">
+        {DIFFICULTY_OPTIONS.map(({ key, label }) => (
+          <button
+            key={key}
+            className={`btn-difficulty${difficulty === key ? ' btn-difficulty--active' : ''}`}
+            onClick={() => onDifficultyChange(key)}
+          >
+            {label}
+          </button>
         ))}
       </div>
 
@@ -204,12 +219,22 @@ function SelectScreen({ animalIndex, lockedStatus, keyCount, isAnimating,
 }
 
 // ── プレイ画面 ────────────────────────────────────────────────────────────────
-function PlayScreen({ animal, clearCount, onBack, onComplete }) {
-  const [placed, setPlaced] = useState({ 0: false, 1: false, 2: false })
-  const [trayOrder, setTrayOrder] = useState(() => shuffled([0, 1, 2]))
+function PlayScreen({ animal, clearCount, difficulty, onBack, onComplete }) {
+  const { nRows, nCols } = DIFFICULTY_OPTIONS.find(d => d.key === difficulty)
+  const totalPieces = nRows * nCols
+  const cellW = PIECE_SIZE / nCols
+  const cellH = PIECE_SIZE / nRows
+  const snapThreshold = Math.min(cellW, cellH) * 0.8
+
+  const [placed, setPlaced] = useState(() =>
+    Object.fromEntries(Array.from({ length: totalPieces }, (_, i) => [i, false]))
+  )
+  const [trayOrder, setTrayOrder] = useState(() =>
+    shuffled(Array.from({ length: totalPieces }, (_, i) => i))
+  )
   const [drag, setDrag] = useState(null)
 
-  const slotRefs    = useRef([null, null, null])
+  const slotRefs     = useRef([])
   const keyEarnedRef = useRef(false)
 
   const allPlaced = Object.values(placed).every(Boolean)
@@ -223,16 +248,16 @@ function PlayScreen({ animal, clearCount, onBack, onComplete }) {
   }, [allPlaced, onComplete])
 
   const reset = useCallback(() => {
-    setPlaced({ 0: false, 1: false, 2: false })
-    setTrayOrder(shuffled([0, 1, 2]))
-  }, [])
+    setPlaced(Object.fromEntries(Array.from({ length: totalPieces }, (_, i) => [i, false])))
+    setTrayOrder(shuffled(Array.from({ length: totalPieces }, (_, i) => i)))
+  }, [totalPieces])
 
-  const startDrag = useCallback((e, sliceIndex) => {
-    if (placed[sliceIndex]) return
+  const startDrag = useCallback((e, pieceId) => {
+    if (placed[pieceId]) return
     e.preventDefault()
     const clientX = e.touches ? e.touches[0].clientX : e.clientX
     const clientY = e.touches ? e.touches[0].clientY : e.clientY
-    setDrag({ sliceIndex, x: clientX, y: clientY })
+    setDrag({ pieceId, x: clientX, y: clientY })
   }, [placed])
 
   const onMove = useCallback((e) => {
@@ -245,19 +270,19 @@ function PlayScreen({ animal, clearCount, onBack, onComplete }) {
 
   const onRelease = useCallback(() => {
     if (!drag) return
-    const { sliceIndex, x, y } = drag
-    slotRefs.current.forEach((el, targetIndex) => {
-      if (!el || placed[targetIndex]) return
+    const { pieceId, x, y } = drag
+    slotRefs.current.forEach((el, targetId) => {
+      if (!el || placed[targetId]) return
       const rect = el.getBoundingClientRect()
       const cx = rect.left + rect.width / 2
       const cy = rect.top + rect.height / 2
-      if (Math.hypot(x - cx, y - cy) < SNAP_THRESHOLD && targetIndex === sliceIndex) {
-        setPlaced(prev => ({ ...prev, [sliceIndex]: true }))
+      if (Math.hypot(x - cx, y - cy) < snapThreshold && targetId === pieceId) {
+        setPlaced(prev => ({ ...prev, [pieceId]: true }))
         playSnap()
       }
     })
     setDrag(null)
-  }, [drag, placed])
+  }, [drag, placed, snapThreshold])
 
   useEffect(() => {
     if (!drag) return
@@ -273,19 +298,23 @@ function PlayScreen({ animal, clearCount, onBack, onComplete }) {
     }
   }, [drag, onMove, onRelease])
 
-  const floatingPiece = drag && (
-    <div
-      className="piece piece--floating"
-      style={{
-        left: drag.x - PIECE_SIZE / 2,
-        top:  drag.y - PART_HEIGHT / 2,
-        width: PIECE_SIZE,
-        height: PART_HEIGHT,
-      }}
-    >
-      <EmojiSlice emoji={animal.emoji} sliceIndex={drag.sliceIndex} />
-    </div>
-  )
+  const floatingPiece = drag && (() => {
+    const r = Math.floor(drag.pieceId / nCols)
+    const c = drag.pieceId % nCols
+    return (
+      <div
+        className="piece piece--floating"
+        style={{
+          left: drag.x - cellW / 2,
+          top:  drag.y - cellH / 2,
+          width: cellW,
+          height: cellH,
+        }}
+      >
+        <EmojiSlice emoji={animal.emoji} row={r} col={c} nRows={nRows} nCols={nCols} />
+      </div>
+    )
+  })()
 
   return (
     <main className="puzzle">
@@ -300,19 +329,26 @@ function PlayScreen({ animal, clearCount, onBack, onComplete }) {
       <section className="puzzle__stage">
         <p className="stage__label">ここにはめよう！</p>
         <div className={`stage__slots${drag ? ' stage__slots--active' : ''}`}>
-          {[0, 1, 2].map((sliceIndex) => (
-            <div
-              key={sliceIndex}
-              className={`slot${placed[sliceIndex] ? ' slot--filled' : ''}`}
-              ref={el => slotRefs.current[sliceIndex] = el}
-              style={{ height: PART_HEIGHT, width: PIECE_SIZE }}
-            >
-              <EmojiSlice emoji={animal.emoji} sliceIndex={sliceIndex} silhouette />
-              {placed[sliceIndex] && (
-                <div className="slot__placed">
-                  <EmojiSlice emoji={animal.emoji} sliceIndex={sliceIndex} />
-                </div>
-              )}
+          {Array.from({ length: nRows }, (_, r) => (
+            <div key={r} style={{ display: 'flex' }}>
+              {Array.from({ length: nCols }, (_, c) => {
+                const id = r * nCols + c
+                return (
+                  <div
+                    key={c}
+                    className={`slot${placed[id] ? ' slot--filled' : ''}`}
+                    ref={el => { slotRefs.current[id] = el }}
+                    style={{ height: cellH, width: cellW }}
+                  >
+                    <EmojiSlice emoji={animal.emoji} row={r} col={c} nRows={nRows} nCols={nCols} silhouette />
+                    {placed[id] && (
+                      <div className="slot__placed">
+                        <EmojiSlice emoji={animal.emoji} row={r} col={c} nRows={nRows} nCols={nCols} />
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           ))}
         </div>
@@ -334,18 +370,20 @@ function PlayScreen({ animal, clearCount, onBack, onComplete }) {
       <section className="puzzle__tray">
         <p className="tray__label">ドラッグしてね！</p>
         <div className="tray__pieces">
-          {trayOrder.map((sliceIndex) => {
-            const isPlaced   = placed[sliceIndex]
-            const isDragging = drag?.sliceIndex === sliceIndex
+          {trayOrder.map((pieceId) => {
+            const r = Math.floor(pieceId / nCols)
+            const c = pieceId % nCols
+            const isPlaced   = placed[pieceId]
+            const isDragging = drag?.pieceId === pieceId
             return (
               <div
-                key={sliceIndex}
+                key={pieceId}
                 className={`piece${isPlaced ? ' piece--placed' : ''}${isDragging ? ' piece--dragging' : ''}`}
-                style={{ width: PIECE_SIZE, height: PART_HEIGHT }}
-                onMouseDown={isPlaced ? undefined : (e) => startDrag(e, sliceIndex)}
-                onTouchStart={isPlaced ? undefined : (e) => startDrag(e, sliceIndex)}
+                style={{ width: cellW, height: cellH }}
+                onMouseDown={isPlaced ? undefined : (e) => startDrag(e, pieceId)}
+                onTouchStart={isPlaced ? undefined : (e) => startDrag(e, pieceId)}
               >
-                {!isPlaced && <EmojiSlice emoji={animal.emoji} sliceIndex={sliceIndex} />}
+                {!isPlaced && <EmojiSlice emoji={animal.emoji} row={r} col={c} nRows={nRows} nCols={nCols} />}
               </div>
             )
           })}
@@ -377,8 +415,8 @@ function lsGet(key, fallback) {
 export default function ShadowPuzzle() {
   const [screen, setScreen] = useState('select')
   const [animalIndex, setAnimalIndex] = useState(0)
+  const [difficulty, setDifficulty] = useState('easy')
 
-  // localStorage から初期値を復元（なければデフォルト）
   const [keyCount,     setKeyCount]     = useState(() => lsGet(LS.keyCount,   0))
   const [lockedStatus, setLockedStatus] = useState(() => {
     const saved = lsGet(LS.locked, null)
@@ -390,13 +428,13 @@ export default function ShadowPuzzle() {
   })
   const [clearCount,   setClearCount]   = useState(() => lsGet(LS.clearCount, 0))
 
-  const [flyKey, setFlyKey] = useState(null)
+  const [flyKey,  setFlyKey]  = useState(null)
   const [soundOn, setSoundOn] = useState(true)
 
   const keyCounterRef = useRef(null)
 
   useEffect(() => {
-    const start = () => startBgm()
+    const start = () => startBgm('select')
     window.addEventListener('pointerdown', start, { once: true })
     return () => window.removeEventListener('pointerdown', start)
   }, [])
@@ -405,18 +443,16 @@ export default function ShadowPuzzle() {
     setSoundOn(prev => {
       const next = !prev
       setMuted(!next)
-      if (next) startBgm()
+      if (next) startBgm(screen === 'play' ? 'play' : 'select')
       else stopBgm()
       return next
     })
-  }, [])
+  }, [screen])
 
-  // 状態が変わるたびに localStorage へ保存
   useEffect(() => { localStorage.setItem(LS.keyCount,   JSON.stringify(keyCount))     }, [keyCount])
   useEffect(() => { localStorage.setItem(LS.locked,     JSON.stringify(lockedStatus)) }, [lockedStatus])
   useEffect(() => { localStorage.setItem(LS.clearCount, JSON.stringify(clearCount))   }, [clearCount])
 
-  // 3クリアごとに鍵を1つ付与
   useEffect(() => {
     if (clearCount > 0 && clearCount % 3 === 0) {
       setKeyCount(k => k + 1)
@@ -424,7 +460,6 @@ export default function ShadowPuzzle() {
     }
   }, [clearCount])
 
-  // デバッグ用：全データをリセット
   const handleDebugReset = useCallback(() => {
     localStorage.clear()
     setKeyCount(0)
@@ -444,9 +479,8 @@ export default function ShadowPuzzle() {
     setAnimalIndex(i => (i + 1) % ANIMALS.length)
   }, [])
 
-  // SelectScreen から targetRect（カルーセル中央の DOMRect）を受け取る
   const handleUnlock = useCallback((targetRect) => {
-    if (flyKey) return // アニメーション中は無視
+    if (flyKey) return
     if (keyCount > 0) {
       playKeyFly()
       const counterRect = keyCounterRef.current?.getBoundingClientRect()
@@ -462,14 +496,12 @@ export default function ShadowPuzzle() {
           },
           animalIdx: animalIndex,
         })
-        // アニメーション完了は FlyingKey の onAnimationComplete で処理
       }
     } else {
       alert('鍵が足りません！')
     }
   }, [flyKey, keyCount, animalIndex])
 
-  // FlyingKey アニメーション完了時に状態を更新
   const applyUnlock = useCallback(() => {
     if (!flyKey) return
     const idx = flyKey.animalIdx
@@ -483,21 +515,28 @@ export default function ShadowPuzzle() {
     setClearCount(prev => prev + 1)
   }, [])
 
+  const handleStart = useCallback(() => {
+    startBgm('play')
+    setScreen('play')
+  }, [])
+
+  const handleBack = useCallback(() => {
+    startBgm('select')
+    setScreen('select')
+  }, [])
+
   return (
     <>
       <KeyCounter ref={keyCounterRef} count={keyCount} />
 
-      {/* デバッグ用リセットボタン（左下固定）*/}
       <button className="btn-debug-reset" onClick={handleDebugReset} aria-label="データをリセット">
         🗑
       </button>
 
-      {/* サウンドトグル（右下固定）*/}
       <button className="btn-sound-toggle" onClick={toggleSound} aria-label="サウンドトグル">
         {soundOn ? '🔊' : '🔇'}
       </button>
 
-      {/* 飛ぶ鍵（画面をまたぐので最上位に置く）*/}
       <AnimatePresence>
         {flyKey && (
           <FlyingKey
@@ -515,17 +554,20 @@ export default function ShadowPuzzle() {
           lockedStatus={lockedStatus}
           keyCount={keyCount}
           isAnimating={!!flyKey}
+          difficulty={difficulty}
           onPrev={prevAnimal}
           onNext={nextAnimal}
-          onStart={() => setScreen('play')}
+          onStart={handleStart}
           onUnlock={handleUnlock}
+          onDifficultyChange={setDifficulty}
         />
       ) : (
         <PlayScreen
-          key={animalIndex}
+          key={`${animalIndex}-${difficulty}`}
           animal={ANIMALS[animalIndex]}
           clearCount={clearCount}
-          onBack={() => setScreen('select')}
+          difficulty={difficulty}
+          onBack={handleBack}
           onComplete={handleComplete}
         />
       )}
