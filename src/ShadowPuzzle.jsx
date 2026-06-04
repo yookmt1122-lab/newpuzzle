@@ -29,8 +29,27 @@ const INITIAL_LOCKED = [
   true, true, true, true, true, true, true, true, true,
 ]
 
-const PIECE_SIZE = 360
-const EMOJI_SIZE  = 280
+const PIECE_SIZE_MAX = 360
+
+function calcPieceSize() {
+  const vw = window.innerWidth
+  const vh = window.innerHeight
+  // 横: puzzle padding 32px + stage padding 20px = 52px
+  const fromWidth  = vw - 52
+  // 縦: ステージ＋トレイ両方が収まるよう overhead ~300px を引いて2等分
+  const fromHeight = (vh - 300) / 2
+  return Math.max(Math.min(fromWidth, fromHeight, PIECE_SIZE_MAX), 200)
+}
+
+function usePieceSize() {
+  const [size, setSize] = useState(calcPieceSize)
+  useEffect(() => {
+    const handler = () => setSize(calcPieceSize())
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
+  return size
+}
 
 const DIFFICULTY_OPTIONS = [
   { key: 'easy',   nRows: 3, nCols: 1, label: '3ピース' },
@@ -38,9 +57,10 @@ const DIFFICULTY_OPTIONS = [
   { key: 'hard',   nRows: 3, nCols: 4, label: '12ピース' },
 ]
 
-function EmojiSlice({ emoji, row, col, nRows, nCols, silhouette = false }) {
-  const cellW = PIECE_SIZE / nCols
-  const cellH = PIECE_SIZE / nRows
+function EmojiSlice({ emoji, row, col, nRows, nCols, pieceSize, silhouette = false }) {
+  const cellW = pieceSize / nCols
+  const cellH = pieceSize / nRows
+  const emojiSize = Math.round(pieceSize * 0.778)
   return (
     <div className="emoji-slice" style={{ width: cellW, height: cellH }}>
       <div
@@ -48,11 +68,11 @@ function EmojiSlice({ emoji, row, col, nRows, nCols, silhouette = false }) {
         style={{
           left: -(col * cellW),
           top:  -(row * cellH),
-          width: PIECE_SIZE,
-          height: PIECE_SIZE,
+          width: pieceSize,
+          height: pieceSize,
         }}
       >
-        <span style={{ fontSize: EMOJI_SIZE }}>{emoji}</span>
+        <span style={{ fontSize: emojiSize }}>{emoji}</span>
       </div>
     </div>
   )
@@ -230,11 +250,11 @@ function SelectScreen({ animalIndex, lockedStatus, keyCount, isAnimating,
 }
 
 // ── プレイ画面 ────────────────────────────────────────────────────────────────
-function PlayScreen({ animal, clearCount, difficulty, onBack, onComplete }) {
+function PlayScreen({ animal, clearCount, difficulty, pieceSize, onBack, onComplete }) {
   const { nRows, nCols } = DIFFICULTY_OPTIONS.find(d => d.key === difficulty)
   const totalPieces = nRows * nCols
-  const cellW = PIECE_SIZE / nCols
-  const cellH = PIECE_SIZE / nRows
+  const cellW = pieceSize / nCols
+  const cellH = pieceSize / nRows
   const snapThreshold = Math.min(cellW, cellH) * 0.8
 
   const [placed, setPlaced] = useState(() =>
@@ -322,7 +342,7 @@ function PlayScreen({ animal, clearCount, difficulty, onBack, onComplete }) {
           height: cellH,
         }}
       >
-        <EmojiSlice emoji={animal.emoji} row={r} col={c} nRows={nRows} nCols={nCols} />
+        <EmojiSlice emoji={animal.emoji} row={r} col={c} nRows={nRows} nCols={nCols} pieceSize={pieceSize} />
       </div>
     )
   })()
@@ -351,10 +371,10 @@ function PlayScreen({ animal, clearCount, difficulty, onBack, onComplete }) {
                     ref={el => { slotRefs.current[id] = el }}
                     style={{ height: cellH, width: cellW }}
                   >
-                    <EmojiSlice emoji={animal.emoji} row={r} col={c} nRows={nRows} nCols={nCols} silhouette />
+                    <EmojiSlice emoji={animal.emoji} row={r} col={c} nRows={nRows} nCols={nCols} pieceSize={pieceSize} silhouette />
                     {placed[id] && (
                       <div className="slot__placed">
-                        <EmojiSlice emoji={animal.emoji} row={r} col={c} nRows={nRows} nCols={nCols} />
+                        <EmojiSlice emoji={animal.emoji} row={r} col={c} nRows={nRows} nCols={nCols} pieceSize={pieceSize} />
                       </div>
                     )}
                   </div>
@@ -394,7 +414,7 @@ function PlayScreen({ animal, clearCount, difficulty, onBack, onComplete }) {
                 onMouseDown={isPlaced ? undefined : (e) => startDrag(e, pieceId)}
                 onTouchStart={isPlaced ? undefined : (e) => startDrag(e, pieceId)}
               >
-                {!isPlaced && <EmojiSlice emoji={animal.emoji} row={r} col={c} nRows={nRows} nCols={nCols} />}
+                {!isPlaced && <EmojiSlice emoji={animal.emoji} row={r} col={c} nRows={nRows} nCols={nCols} pieceSize={pieceSize} />}
               </div>
             )
           })}
@@ -424,6 +444,8 @@ function lsGet(key, fallback) {
 
 // ── ルート ────────────────────────────────────────────────────────────────────
 export default function ShadowPuzzle() {
+  const pieceSize = usePieceSize()
+
   const [screen, setScreen] = useState('select')
   const [animalIndex, setAnimalIndex] = useState(0)
   const [difficulty, setDifficulty] = useState('easy')
@@ -576,6 +598,7 @@ export default function ShadowPuzzle() {
           animal={ANIMALS[animalIndex]}
           clearCount={clearCount}
           difficulty={difficulty}
+          pieceSize={pieceSize}
           onBack={handleBack}
           onComplete={handleComplete}
         />
