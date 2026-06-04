@@ -29,8 +29,8 @@ const INITIAL_LOCKED = [
   true, true, true, true, true, true, true, true, true,
 ]
 
-const PIECE_SIZE = 180
-const EMOJI_SIZE  = 140
+const PIECE_SIZE = 360
+const EMOJI_SIZE  = 280
 
 const DIFFICULTY_OPTIONS = [
   { key: 'easy',   nRows: 3, nCols: 1, label: '3ピース' },
