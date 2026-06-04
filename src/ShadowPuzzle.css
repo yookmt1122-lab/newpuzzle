@@ -323,6 +323,7 @@
   min-height: 100vh;
   position: relative;
   user-select: none;
+  touch-action: none;
 }
 
 .play__header {
