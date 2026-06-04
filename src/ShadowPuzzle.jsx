@@ -10,8 +10,20 @@ const ANIMALS = [
   { emoji: '🐸', label: 'カエル' },
   { emoji: '🐼', label: 'パンダ' },
   { emoji: '🦊', label: 'キツネ' },
+  { emoji: '🐬', label: 'イルカ' },
+  { emoji: '🦈', label: 'サメ' },
+  { emoji: '🐠', label: 'さかな' },
+  { emoji: '🦒', label: 'キリン' },
+  { emoji: '🐯', label: 'トラ' },
+  { emoji: '🦓', label: 'シマウマ' },
+  { emoji: '🦋', label: 'チョウ' },
+  { emoji: '🐝', label: 'ハチ' },
+  { emoji: '🐞', label: 'テントウムシ' },
 ]
-const INITIAL_LOCKED = [false, false, false, false, true, true, true]
+const INITIAL_LOCKED = [
+  false, false, false, false, true, true, true,
+  true, true, true, true, true, true, true, true, true,
+]
 
 const PIECE_SIZE = 180
 const EMOJI_SIZE  = 140
@@ -362,7 +374,14 @@ export default function ShadowPuzzle() {
 
   // localStorage から初期値を復元（なければデフォルト）
   const [keyCount,     setKeyCount]     = useState(() => lsGet(LS.keyCount,   0))
-  const [lockedStatus, setLockedStatus] = useState(() => lsGet(LS.locked,     INITIAL_LOCKED))
+  const [lockedStatus, setLockedStatus] = useState(() => {
+    const saved = lsGet(LS.locked, null)
+    if (!Array.isArray(saved)) return INITIAL_LOCKED
+    if (saved.length === ANIMALS.length) return saved
+    const padded = [...saved]
+    while (padded.length < ANIMALS.length) padded.push(true)
+    return padded.slice(0, ANIMALS.length)
+  })
   const [clearCount,   setClearCount]   = useState(() => lsGet(LS.clearCount, 0))
 
   const [flyKey, setFlyKey] = useState(null)
