@@ -76,6 +76,12 @@ export function playClick() {
   tone(500, 0.06, 0, 0.15)
 }
 
+export function playBuzz() {
+  resume()
+  tone(180, 0.18, 0,    0.45, 'sawtooth')
+  tone(140, 0.22, 0.18, 0.45, 'sawtooth')
+}
+
 // ── BGM ──────────────────────────────────────────────────────────────────────
 let bgmPlaying = false
 let bgmTid = null

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import './ShadowPuzzle.css'
 import {
   playSnap, playComplete, playKeyEarned, playKeyFly, playUnlock, playClick,
-  startBgm, stopBgm, setMuted,
+  playBuzz, startBgm, stopBgm, setMuted,
 } from './sounds.js'
 
 const ANIMALS = [
@@ -127,9 +127,16 @@ function SelectScreen({ animalIndex, lockedStatus, keyCount, isAnimating,
   const canUnlock       = isCurrentLocked && keyCount > 0
 
   const centerRef = useRef(null)
+  const [rejectAnim, setRejectAnim] = useState(false)
 
   const handleUnlockClick = () => {
     if (isAnimating) return
+    if (!canUnlock) {
+      playBuzz()
+      setRejectAnim(false)
+      requestAnimationFrame(() => requestAnimationFrame(() => setRejectAnim(true)))
+      return
+    }
     const rect = centerRef.current?.getBoundingClientRect()
     onUnlock(rect)
   }
@@ -152,7 +159,11 @@ function SelectScreen({ animalIndex, lockedStatus, keyCount, isAnimating,
 
           <div className="carousel-item carousel-item--center" ref={centerRef}>
             <div className={`carousel-item__preview${isCurrentLocked ? ' carousel-item__preview--locked' : ''}`}>
-              <span key={animalIndex} className="carousel-item__emoji">{curr.emoji}</span>
+              <span
+                key={animalIndex}
+                className={`carousel-item__emoji${rejectAnim ? ' carousel-item__emoji--rejected' : ''}`}
+                onAnimationEnd={(e) => { if (e.animationName === 'emoji-reject') setRejectAnim(false) }}
+              >{curr.emoji}</span>
               <AnimatePresence>
                 {isCurrentLocked && (
                   <motion.div
@@ -497,8 +508,6 @@ export default function ShadowPuzzle() {
           animalIdx: animalIndex,
         })
       }
-    } else {
-      alert('鍵が足りません！')
     }
   }, [flyKey, keyCount, animalIndex])
 
