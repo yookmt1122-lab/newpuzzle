@@ -23,9 +23,19 @@ const ANIMALS = [
   { emoji: '🦋', label: 'チョウ' },
   { emoji: '🐝', label: 'ハチ' },
   { emoji: '🐞', label: 'テントウムシ' },
+  { emoji: '🐻', label: 'クマ' },
+  { emoji: '🐨', label: 'コアラ' },
+  { emoji: '🐰', label: 'ウサギ' },
+  { emoji: '🦑', label: 'イカ' },
+  { emoji: '🦀', label: 'カニ' },
+  { emoji: '🐡', label: 'フグ' },
+  { emoji: '🐜', label: 'アリ' },
+  { emoji: '🐛', label: 'イモムシ' },
+  { emoji: '🦗', label: 'コオロギ' },
 ]
 const INITIAL_LOCKED = [
-  false, false, false, false, true, true, true,
+  false, false, false, false,
+  true, true, true, true, true, true, true, true, true, true, true, true,
   true, true, true, true, true, true, true, true, true,
 ]
 
@@ -54,6 +64,7 @@ function usePieceSize() {
 const DIFFICULTY_OPTIONS = [
   { key: 'easy',   nRows: 3, nCols: 1, label: '3ピース' },
   { key: 'medium', nRows: 3, nCols: 2, label: '6ピース' },
+  { key: 'hard9',  nRows: 3, nCols: 3, label: '9ピース' },
   { key: 'hard',   nRows: 3, nCols: 4, label: '12ピース' },
 ]
 

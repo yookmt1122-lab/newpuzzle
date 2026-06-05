@@ -332,7 +332,10 @@
 /* ── 難易度選択 ───────────────────────────────────────────────────────────── */
 .difficulty-selector {
   display: flex;
-  gap: 12px;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 420px;
 }
 
 .btn-difficulty {
@@ -650,8 +653,8 @@
   }
 
   .btn-difficulty {
-    padding: 8px 14px;
-    font-size: 0.82rem;
+    padding: 8px 12px;
+    font-size: 0.78rem;
   }
 
   .btn-start {
