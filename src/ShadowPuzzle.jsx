@@ -34,9 +34,9 @@ const ANIMALS = [
   { emoji: '🦗', label: 'コオロギ' },
 ]
 const INITIAL_LOCKED = [
-  false, false, false, false,
-  true, true, true, true, true, true, true, true, true, true, true, true,
-  true, true, true, true, true, true, true, true, true,
+  false, false, false, false, false, false, false, false, false, false,
+  true, true, true, true, true, true, true, true, true, true,
+  true, true, true, true, true,
 ]
 
 const PIECE_SIZE_MAX = 360
