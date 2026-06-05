@@ -3,7 +3,11 @@ const ctx = () => {
   if (!_ctx) _ctx = new (window.AudioContext || window.webkitAudioContext)()
   return _ctx
 }
-const resume = () => ctx().state === 'suspended' && ctx().resume()
+const resume = () => {
+  const c = ctx()
+  if (c.state !== 'running') return c.resume()
+  return Promise.resolve()
+}
 
 let muted = false
 export const setMuted = (v) => { muted = v }
@@ -25,61 +29,70 @@ function tone(freq, dur, delay = 0, vol = 0.3, type = 'triangle') {
   o.stop(t + dur + 0.05)
 }
 
+function withResume(fn) {
+  resume().then(fn)
+}
+
 export function playSnap() {
-  resume()
-  tone(880, 0.12, 0, 0.35)
-  tone(1108, 0.1, 0.08, 0.25)
+  withResume(() => {
+    tone(880, 0.12, 0, 0.35)
+    tone(1108, 0.1, 0.08, 0.25)
+  })
 }
 
 export function playComplete() {
-  resume()
-  ;[523, 659, 784, 1047].forEach((f, i) => tone(f, 0.35, i * 0.14, 0.3))
+  withResume(() => {
+    ;[523, 659, 784, 1047].forEach((f, i) => tone(f, 0.35, i * 0.14, 0.3))
+  })
 }
 
 export function playKeyEarned() {
-  resume()
-  ;[784, 1047, 1319, 1568].forEach((f, i) => tone(f, 0.25, i * 0.1, 0.3, 'sine'))
+  withResume(() => {
+    ;[784, 1047, 1319, 1568].forEach((f, i) => tone(f, 0.25, i * 0.1, 0.3, 'sine'))
+  })
 }
 
 export function playKeyFly() {
   if (muted) return
-  resume()
-  const c = ctx()
-  const buf = c.createBuffer(1, c.sampleRate * 0.6, c.sampleRate)
-  const d = buf.getChannelData(0)
-  for (let i = 0; i < d.length; i++) {
-    d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 2)
-  }
-  const src = c.createBufferSource()
-  src.buffer = buf
-  const filt = c.createBiquadFilter()
-  filt.type = 'highpass'
-  filt.frequency.value = 1200
-  const g = c.createGain()
-  g.gain.value = 0.35
-  src.connect(filt)
-  filt.connect(g)
-  g.connect(c.destination)
-  src.start()
+  withResume(() => {
+    const c = ctx()
+    const buf = c.createBuffer(1, c.sampleRate * 0.6, c.sampleRate)
+    const d = buf.getChannelData(0)
+    for (let i = 0; i < d.length; i++) {
+      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 2)
+    }
+    const src = c.createBufferSource()
+    src.buffer = buf
+    const filt = c.createBiquadFilter()
+    filt.type = 'highpass'
+    filt.frequency.value = 1200
+    const g = c.createGain()
+    g.gain.value = 0.35
+    src.connect(filt)
+    filt.connect(g)
+    g.connect(c.destination)
+    src.start()
+  })
 }
 
 export function playUnlock() {
-  resume()
-  ;[523, 659, 784, 1047, 1319].forEach((f, i) => {
-    tone(f, 0.5, i * 0.12, 0.28, 'sine')
-    tone(f * 2, 0.35, i * 0.12, 0.1, 'sine')
+  withResume(() => {
+    ;[523, 659, 784, 1047, 1319].forEach((f, i) => {
+      tone(f, 0.5, i * 0.12, 0.28, 'sine')
+      tone(f * 2, 0.35, i * 0.12, 0.1, 'sine')
+    })
   })
 }
 
 export function playClick() {
-  resume()
-  tone(500, 0.06, 0, 0.15)
+  withResume(() => tone(500, 0.06, 0, 0.15))
 }
 
 export function playBuzz() {
-  resume()
-  tone(180, 0.18, 0,    0.45, 'sawtooth')
-  tone(140, 0.22, 0.18, 0.45, 'sawtooth')
+  withResume(() => {
+    tone(180, 0.18, 0,    0.45, 'sawtooth')
+    tone(140, 0.22, 0.18, 0.45, 'sawtooth')
+  })
 }
 
 // ── BGM ──────────────────────────────────────────────────────────────────────
@@ -119,11 +132,12 @@ function scheduleBgm(idx, melody, tempo) {
 
 export function startBgm(type = 'select') {
   stopBgm()
-  resume()
   bgmPlaying = true
   const melody = type === 'play' ? PLAY_MELODY : SELECT_MELODY
   const tempo  = type === 'play' ? PLAY_TEMPO  : SELECT_TEMPO
-  scheduleBgm(0, melody, tempo)
+  resume().then(() => {
+    if (bgmPlaying) scheduleBgm(0, melody, tempo)
+  })
 }
 
 export function stopBgm() {
