@@ -83,24 +83,33 @@ function shuffled(arr) {
 }
 
 // ── 星プログレス ──────────────────────────────────────────────────────────────
-function StarProgress({ starsLit, keyEarnAnim }) {
+function StarProgress({ starsLit, keyEarnAnim, onCollect }) {
   const count = keyEarnAnim === 'stars' ? 3 : starsLit
   const showKey = keyEarnAnim === 'key'
+  const keyRef = useRef(null)
+
+  const handleTap = () => {
+    const rect = keyRef.current?.getBoundingClientRect()
+    if (rect) onCollect(rect)
+  }
 
   return (
     <div className="star-progress">
       <AnimatePresence>
         {showKey && (
-          <motion.span
+          <motion.div
             key="key-emoji"
-            className="star-progress__key"
+            ref={keyRef}
+            className="star-progress__key-wrap"
             initial={{ scale: 0, rotate: -20 }}
             animate={{ scale: [0, 1.9, 1.3, 1.5], rotate: [-20, 15, -8, 0] }}
             exit={{ scale: 0, opacity: 0 }}
             transition={{ duration: 0.75 }}
+            onClick={handleTap}
+            whileTap={{ scale: 1.2 }}
           >
-            🔑
-          </motion.span>
+            <span className="star-progress__key-inner">🔑</span>
+          </motion.div>
         )}
       </AnimatePresence>
       <div className={`star-progress__stars${showKey ? ' star-progress__stars--hidden' : ''}`}>
@@ -173,7 +182,7 @@ function FlyingKey({ from, to, onComplete }) {
 
 // ── 選択画面 ──────────────────────────────────────────────────────────────────
 function SelectScreen({ animalIndex, lockedStatus, keyCount, isAnimating,
-                        difficulty, starsLit, keyEarnAnim,
+                        difficulty, starsLit, keyEarnAnim, onCollect,
                         onPrev, onNext, onStart, onUnlock, onDifficultyChange }) {
   const n = ANIMALS.length
   const prevIdx = (animalIndex - 1 + n) % n
@@ -208,7 +217,7 @@ function SelectScreen({ animalIndex, lockedStatus, keyCount, isAnimating,
       <h1 className="puzzle__title">かげえパズル</h1>
       <p className="select__subtitle">どうぶつをえらんでね！</p>
 
-      <StarProgress starsLit={starsLit} keyEarnAnim={keyEarnAnim} />
+      <StarProgress starsLit={starsLit} keyEarnAnim={keyEarnAnim} onCollect={onCollect} />
 
       <div className="select__row">
         <button className="carousel__btn" onClick={onPrev} aria-label="前の動物">◀</button>
@@ -542,12 +551,7 @@ export default function ShadowPuzzle() {
     pendingKeyRef.current = false
     setKeyEarnAnim('stars')
     const t1 = setTimeout(() => setKeyEarnAnim('key'), 800)
-    const t2 = setTimeout(() => {
-      playKeyEarned()
-      setKeyCount(k => k + 1)
-      setKeyEarnAnim(null)
-    }, 2500)
-    return () => { clearTimeout(t1); clearTimeout(t2) }
+    return () => clearTimeout(t1)
   }, [screen])
 
   const handleDebugReset = useCallback(() => {
@@ -569,6 +573,19 @@ export default function ShadowPuzzle() {
     setAnimalIndex(i => (i + 1) % ANIMALS.length)
   }, [])
 
+  const handleCollectKey = useCallback((fromRect) => {
+    if (flyKey || !fromRect) return
+    const counterRect = keyCounterRef.current?.getBoundingClientRect()
+    if (!counterRect) return
+    setKeyEarnAnim(null)
+    playKeyFly()
+    setFlyKey({
+      type: 'collect',
+      from: { x: fromRect.left + fromRect.width  / 2, y: fromRect.top  + fromRect.height / 2 },
+      to:   { x: counterRect.left + counterRect.width / 2, y: counterRect.top + counterRect.height / 2 },
+    })
+  }, [flyKey])
+
   const handleUnlock = useCallback((targetRect) => {
     if (flyKey) return
     if (keyCount > 0) {
@@ -576,6 +593,7 @@ export default function ShadowPuzzle() {
       const counterRect = keyCounterRef.current?.getBoundingClientRect()
       if (counterRect && targetRect) {
         setFlyKey({
+          type: 'unlock',
           from: {
             x: counterRect.left + counterRect.width  / 2,
             y: counterRect.top  + counterRect.height / 2,
@@ -590,13 +608,18 @@ export default function ShadowPuzzle() {
     }
   }, [flyKey, keyCount, animalIndex])
 
-  const applyUnlock = useCallback(() => {
+  const applyFlyComplete = useCallback(() => {
     if (!flyKey) return
-    const idx = flyKey.animalIdx
-    setKeyCount(k => k - 1)
-    setLockedStatus(prev => prev.map((locked, i) => i === idx ? false : locked))
+    if (flyKey.type === 'collect') {
+      setKeyCount(k => k + 1)
+      playKeyEarned()
+    } else {
+      const idx = flyKey.animalIdx
+      setKeyCount(k => k - 1)
+      setLockedStatus(prev => prev.map((locked, i) => i === idx ? false : locked))
+      playUnlock()
+    }
     setFlyKey(null)
-    playUnlock()
   }, [flyKey])
 
   const handleComplete = useCallback(() => {
@@ -631,7 +654,7 @@ export default function ShadowPuzzle() {
             key="flying-key"
             from={flyKey.from}
             to={flyKey.to}
-            onComplete={applyUnlock}
+            onComplete={applyFlyComplete}
           />
         )}
       </AnimatePresence>
@@ -645,6 +668,7 @@ export default function ShadowPuzzle() {
           difficulty={difficulty}
           starsLit={clearCount % 3}
           keyEarnAnim={keyEarnAnim}
+          onCollect={handleCollectKey}
           onPrev={prevAnimal}
           onNext={nextAnimal}
           onStart={handleStart}
