@@ -82,6 +82,47 @@ function shuffled(arr) {
   return [...arr].sort(() => Math.random() - 0.5)
 }
 
+// ── 星プログレス ──────────────────────────────────────────────────────────────
+function StarProgress({ starsLit, keyEarnAnim }) {
+  const count = keyEarnAnim === 'stars' ? 3 : starsLit
+  const showKey = keyEarnAnim === 'key'
+
+  return (
+    <div className="star-progress">
+      <AnimatePresence>
+        {showKey && (
+          <motion.span
+            key="key-emoji"
+            className="star-progress__key"
+            initial={{ scale: 0, rotate: -20 }}
+            animate={{ scale: [0, 1.9, 1.3, 1.5], rotate: [-20, 15, -8, 0] }}
+            exit={{ scale: 0, opacity: 0 }}
+            transition={{ duration: 0.75 }}
+          >
+            🔑
+          </motion.span>
+        )}
+      </AnimatePresence>
+      <div className={`star-progress__stars${showKey ? ' star-progress__stars--hidden' : ''}`}>
+        {[0, 1, 2].map(i => {
+          const filled = i < count
+          return (
+            <motion.span
+              key={`${i}-${filled}`}
+              className={`star-progress__star${filled ? ' star-progress__star--filled' : ' star-progress__star--empty'}`}
+              initial={filled ? { scale: 0, opacity: 0 } : { scale: 1, opacity: 1 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={filled ? { type: 'spring', stiffness: 380, damping: 14 } : { duration: 0 }}
+            >
+              ⭐
+            </motion.span>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // ── 鍵カウンター ──────────────────────────────────────────────────────────────
 const KeyCounter = forwardRef(function KeyCounter({ count }, ref) {
   return (
@@ -132,7 +173,8 @@ function FlyingKey({ from, to, onComplete }) {
 
 // ── 選択画面 ──────────────────────────────────────────────────────────────────
 function SelectScreen({ animalIndex, lockedStatus, keyCount, isAnimating,
-                        difficulty, onPrev, onNext, onStart, onUnlock, onDifficultyChange }) {
+                        difficulty, starsLit, keyEarnAnim,
+                        onPrev, onNext, onStart, onUnlock, onDifficultyChange }) {
   const n = ANIMALS.length
   const prevIdx = (animalIndex - 1 + n) % n
   const nextIdx = (animalIndex + 1) % n
@@ -165,6 +207,8 @@ function SelectScreen({ animalIndex, lockedStatus, keyCount, isAnimating,
     <div className="select-screen">
       <h1 className="puzzle__title">かげえパズル</h1>
       <p className="select__subtitle">どうぶつをえらんでね！</p>
+
+      <StarProgress starsLit={starsLit} keyEarnAnim={keyEarnAnim} />
 
       <div className="select__row">
         <button className="carousel__btn" onClick={onPrev} aria-label="前の動物">◀</button>
@@ -386,10 +430,9 @@ function PlayScreen({ animal, clearCount, difficulty, pieceSize, onBack, onCompl
         {allPlaced && (
           <div className="puzzle__complete">
             <span>🎉 やったー！ 🎉</span>
-            {clearCount % 3 === 0
-              ? <p className="puzzle__complete-key">🔑 鍵を1つ手に入れた！</p>
-              : <p className="puzzle__complete-key">あと {3 - (clearCount % 3)} かいクリアで鍵ゲット！</p>
-            }
+            <p className="puzzle__complete-key">
+              {'⭐'.repeat(clearCount % 3 || 3)}{'☆'.repeat(3 - (clearCount % 3 || 3))} → 🔑
+            </p>
             <div className="puzzle__complete-btns">
               <button className="btn-reset" onClick={reset}>もういちど！</button>
               <button className="btn-reset btn-reset--back" onClick={onBack}>ほかのどうぶつ</button>
@@ -461,10 +504,12 @@ export default function ShadowPuzzle() {
   })
   const [clearCount,   setClearCount]   = useState(() => lsGet(LS.clearCount, 0))
 
-  const [flyKey,  setFlyKey]  = useState(null)
-  const [soundOn, setSoundOn] = useState(true)
+  const [flyKey,       setFlyKey]       = useState(null)
+  const [soundOn,      setSoundOn]      = useState(true)
+  const [keyEarnAnim,  setKeyEarnAnim]  = useState(null)
 
   const keyCounterRef = useRef(null)
+  const pendingKeyRef = useRef(false)
 
   useEffect(() => {
     const start = () => startBgm('select')
@@ -488,10 +533,22 @@ export default function ShadowPuzzle() {
 
   useEffect(() => {
     if (clearCount > 0 && clearCount % 3 === 0) {
-      setKeyCount(k => k + 1)
-      setTimeout(playKeyEarned, 700)
+      pendingKeyRef.current = true
     }
   }, [clearCount])
+
+  useEffect(() => {
+    if (screen !== 'select' || !pendingKeyRef.current) return
+    pendingKeyRef.current = false
+    setKeyEarnAnim('stars')
+    const t1 = setTimeout(() => setKeyEarnAnim('key'), 800)
+    const t2 = setTimeout(() => {
+      playKeyEarned()
+      setKeyCount(k => k + 1)
+      setKeyEarnAnim(null)
+    }, 2500)
+    return () => { clearTimeout(t1); clearTimeout(t2) }
+  }, [screen])
 
   const handleDebugReset = useCallback(() => {
     localStorage.clear()
@@ -586,6 +643,8 @@ export default function ShadowPuzzle() {
           keyCount={keyCount}
           isAnimating={!!flyKey}
           difficulty={difficulty}
+          starsLit={clearCount % 3}
+          keyEarnAnim={keyEarnAnim}
           onPrev={prevAnimal}
           onNext={nextAnimal}
           onStart={handleStart}

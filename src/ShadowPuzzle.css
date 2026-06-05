@@ -65,6 +65,47 @@
   text-align: center;
 }
 
+/* ── 星プログレス ─────────────────────────────────────────────────────────── */
+.star-progress {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 56px;
+}
+
+.star-progress__stars {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.star-progress__stars--hidden {
+  visibility: hidden;
+}
+
+.star-progress__star {
+  font-size: 2.1rem;
+  line-height: 1;
+  display: block;
+}
+
+.star-progress__star--empty {
+  filter: grayscale(1) opacity(0.25);
+}
+
+.star-progress__star--filled {
+  filter: drop-shadow(0 2px 8px rgba(255, 210, 0, 0.7));
+}
+
+.star-progress__key {
+  position: absolute;
+  font-size: 2.8rem;
+  line-height: 1;
+  display: block;
+  filter: drop-shadow(0 4px 12px rgba(255, 159, 71, 0.6));
+}
+
 /* ── 選択画面 ─────────────────────────────────────────────────────────────── */
 .select-screen {
   display: flex;
