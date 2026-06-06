@@ -32,14 +32,17 @@ const ANIMALS = [
   { emoji: '🐜', label: 'アリ' },
   { emoji: '🐛', label: 'イモムシ' },
   { emoji: '🦗', label: 'コオロギ' },
-  { emoji: '🪲', label: 'カブトムシ' },
+  { emoji: '🪲', label: 'コガネムシ' },
   { emoji: '🐍', label: 'ヘビ' },
   { emoji: '🐢', label: 'カメ' },
+  { emoji: '🦕', label: 'ブラキオ' },
+  { emoji: '🦖', label: 'ティラノ' },
+  { emoji: '🐉', label: 'ドラゴン' },
 ]
 const INITIAL_LOCKED = [
   false, false, false, false, false, false, false, false, false, false,
   true, true, true, true, true, true, true, true, true, true,
-  true, true, true, true, true, true, true, true,
+  true, true, true, true, true, true, true, true, true, true, true,
 ]
 
 const PIECE_SIZE_MAX = 360
