@@ -618,6 +618,11 @@ export default function ShadowPuzzle() {
     setAnimalIndex(0)
   }, [])
 
+  const handleUnlockAll = useCallback(() => {
+    const all = ANIMALS.map(() => false)
+    setLockedStatus(all)
+  }, [])
+
   const prevAnimal = useCallback(() => {
     playClick()
     setAnimalIndex(i => (i - 1 + ANIMALS.length) % ANIMALS.length)
@@ -698,6 +703,8 @@ export default function ShadowPuzzle() {
       <button className="btn-debug-reset" onClick={handleDebugReset} aria-label="データをリセット">
         🗑
       </button>
+
+      <button className="btn-unlock-all" onClick={handleUnlockAll} aria-label="全鍵開放" />
 
       <button className="btn-sound-toggle" onClick={toggleSound} aria-label="サウンドトグル">
         {soundOn ? '🔊' : '🔇'}

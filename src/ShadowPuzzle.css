@@ -17,6 +17,21 @@
   opacity: 0.7;
 }
 
+/* ── 全鍵開放ボタン（不可視・タップ可） ──────────────────────────────────── */
+.btn-unlock-all {
+  position: fixed;
+  bottom: 6px;
+  left: 46px;
+  z-index: 1000;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  background: none;
+  opacity: 0;
+  cursor: pointer;
+}
+
 /* ── サウンドトグル ────────────────────────────────────────────────────────── */
 .btn-sound-toggle {
   position: fixed;
