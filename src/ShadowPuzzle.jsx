@@ -316,6 +316,42 @@ function SelectScreen({ animalIndex, lockedStatus, keyCount, isAnimating,
   )
 }
 
+// ── 透明ピース検出 ────────────────────────────────────────────────────────────
+const DETECT_SIZE = 300
+
+function detectTransparentPieces(emoji, nRows, nCols) {
+  try {
+    const canvas = document.createElement('canvas')
+    canvas.width = DETECT_SIZE
+    canvas.height = DETECT_SIZE
+    const ctx = canvas.getContext('2d')
+    ctx.font = `${Math.round(DETECT_SIZE * 0.778)}px serif`
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(emoji, DETECT_SIZE / 2, DETECT_SIZE / 2)
+    const cw = DETECT_SIZE / nCols
+    const ch = DETECT_SIZE / nRows
+    const result = new Set()
+    for (let r = 0; r < nRows; r++) {
+      for (let c = 0; c < nCols; c++) {
+        const x = Math.round(c * cw)
+        const y = Math.round(r * ch)
+        const w = Math.round(cw)
+        const h = Math.round(ch)
+        const { data } = ctx.getImageData(x, y, w, h)
+        let opaque = 0
+        for (let i = 3; i < data.length; i += 4) {
+          if (data[i] > 10) opaque++
+        }
+        if (opaque / (w * h) < 0.05) result.add(r * nCols + c)
+      }
+    }
+    return result
+  } catch {
+    return new Set()
+  }
+}
+
 // ── プレイ画面 ────────────────────────────────────────────────────────────────
 function PlayScreen({ animal, clearCount, difficulty, pieceSize, onBack, onComplete }) {
   const { nRows, nCols } = DIFFICULTY_OPTIONS.find(d => d.key === difficulty)
@@ -324,11 +360,13 @@ function PlayScreen({ animal, clearCount, difficulty, pieceSize, onBack, onCompl
   const cellH = pieceSize / nRows
   const snapThreshold = Math.min(cellW, cellH) * 0.8
 
+  const [transparentSet] = useState(() => detectTransparentPieces(animal.emoji, nRows, nCols))
+
   const [placed, setPlaced] = useState(() =>
-    Object.fromEntries(Array.from({ length: totalPieces }, (_, i) => [i, false]))
+    Object.fromEntries(Array.from({ length: totalPieces }, (_, i) => [i, transparentSet.has(i)]))
   )
   const [trayOrder, setTrayOrder] = useState(() =>
-    shuffled(Array.from({ length: totalPieces }, (_, i) => i))
+    shuffled(Array.from({ length: totalPieces }, (_, i) => i).filter(i => !transparentSet.has(i)))
   )
   const [drag, setDrag] = useState(null)
 
@@ -346,9 +384,9 @@ function PlayScreen({ animal, clearCount, difficulty, pieceSize, onBack, onCompl
   }, [allPlaced, onComplete])
 
   const reset = useCallback(() => {
-    setPlaced(Object.fromEntries(Array.from({ length: totalPieces }, (_, i) => [i, false])))
-    setTrayOrder(shuffled(Array.from({ length: totalPieces }, (_, i) => i)))
-  }, [totalPieces])
+    setPlaced(Object.fromEntries(Array.from({ length: totalPieces }, (_, i) => [i, transparentSet.has(i)])))
+    setTrayOrder(shuffled(Array.from({ length: totalPieces }, (_, i) => i).filter(i => !transparentSet.has(i))))
+  }, [totalPieces, transparentSet])
 
   const startDrag = useCallback((e, pieceId) => {
     if (placed[pieceId]) return
