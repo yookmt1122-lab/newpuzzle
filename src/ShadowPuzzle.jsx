@@ -830,37 +830,38 @@ function CollectionScreen({ onBack, collection }) {
             transition={{ duration: 0.25 }}
             onClick={() => setSelectedToy(null)}
           >
-            {/* 周囲のキラキラ */}
-            {Array.from({ length: 6 }, (_, i) => {
-              const angle = (i / 6) * 2 * Math.PI
-              return (
-                <motion.div
-                  key={i}
-                  className="toy-spotlight__sparkle"
-                  initial={{ x: 0, y: 0, scale: 0, opacity: 0 }}
-                  animate={{
-                    x:       Math.cos(angle) * 130,
-                    y:       Math.sin(angle) * 130,
-                    scale:   [0, 1.5, 1.0],
-                    opacity: [0, 1,   1  ],
-                  }}
-                  transition={{ duration: 0.65, delay: 0.08 + i * 0.04, times: [0, 0.3, 1] }}
-                >
-                  {SPARKLES[i % SPARKLES.length]}
-                </motion.div>
-              )
-            })}
-
             <div className="toy-spotlight__content">
-              {/* メイン絵文字 */}
-              <motion.div
-                className="toy-spotlight__emoji"
-                initial={{ scale: 0, rotate: -20, opacity: 0 }}
-                animate={{ scale: 1.5, rotate: 0, opacity: 1 }}
-                transition={{ type: 'spring', stiffness: 380, damping: 16 }}
-              >
-                {selectedToy}
-              </motion.div>
+              {/* 絵文字 + スパークル起点（絵文字中心を基準に広がる） */}
+              <div style={{ position: 'relative' }}>
+                {Array.from({ length: 6 }, (_, i) => {
+                  const angle = (i / 6) * 2 * Math.PI
+                  return (
+                    <motion.div
+                      key={i}
+                      className="toy-spotlight__sparkle"
+                      style={{ position: 'absolute', top: '50%', left: '50%' }}
+                      initial={{ x: 0, y: 0, scale: 0, opacity: 0 }}
+                      animate={{
+                        x:       Math.cos(angle) * 130,
+                        y:       Math.sin(angle) * 130,
+                        scale:   [0, 1.5, 1.0],
+                        opacity: [0, 1,   1  ],
+                      }}
+                      transition={{ duration: 0.65, delay: 0.08 + i * 0.04, times: [0, 0.3, 1] }}
+                    >
+                      {SPARKLES[i % SPARKLES.length]}
+                    </motion.div>
+                  )
+                })}
+                <motion.div
+                  className="toy-spotlight__emoji"
+                  initial={{ scale: 0, rotate: -20, opacity: 0 }}
+                  animate={{ scale: 1.5, rotate: 0, opacity: 1 }}
+                  transition={{ type: 'spring', stiffness: 380, damping: 16 }}
+                >
+                  {selectedToy}
+                </motion.div>
+              </div>
 
               {/* おもちゃ名 */}
               <motion.div
