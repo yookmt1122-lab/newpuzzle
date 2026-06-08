@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import './ShadowPuzzle.css'
 import {
   playSnap, playComplete, playKeyEarned, playKeyFly, playUnlock, playClick,
-  playBuzz, startBgm, stopBgm, setMuted,
+  playBuzz, startBgm, stopBgm, setMuted, unlockAudio,
 } from './sounds.js'
 
 const ANIMALS = [
@@ -576,9 +576,22 @@ export default function ShadowPuzzle() {
   const pendingKeyRef = useRef(false)
 
   useEffect(() => {
-    const start = () => startBgm('select')
-    window.addEventListener('pointerdown', start, { once: true })
-    return () => window.removeEventListener('pointerdown', start)
+    let started = false
+    const start = () => {
+      if (started) return
+      started = true
+      unlockAudio()
+      startBgm('select')
+      window.removeEventListener('touchstart', start)
+      window.removeEventListener('pointerdown', start)
+    }
+    // touchstart fires first on iOS and is required for AudioContext unlock
+    window.addEventListener('touchstart', start, { passive: true })
+    window.addEventListener('pointerdown', start)
+    return () => {
+      window.removeEventListener('touchstart', start)
+      window.removeEventListener('pointerdown', start)
+    }
   }, [])
 
   const toggleSound = useCallback(() => {

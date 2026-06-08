@@ -3,6 +3,20 @@ const ctx = () => {
   if (!_ctx) _ctx = new (window.AudioContext || window.webkitAudioContext)()
   return _ctx
 }
+
+// iOS Safari requires: create context + play silent buffer within a user gesture
+export function unlockAudio() {
+  const c = ctx()
+  if (c.state === 'suspended') {
+    const buf = c.createBuffer(1, 1, c.sampleRate)
+    const src = c.createBufferSource()
+    src.buffer = buf
+    src.connect(c.destination)
+    src.start(0)
+    c.resume()
+  }
+}
+
 const resume = () => {
   const c = ctx()
   if (c.state !== 'running') return c.resume()
