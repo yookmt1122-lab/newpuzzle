@@ -1066,6 +1066,21 @@
   position: relative;
   width:  min(220px, 60vw);
   height: min(220px, 60vw);
+  filter: drop-shadow(0 8px 32px rgba(0,0,0,0.55)) drop-shadow(0 0 48px rgba(255,255,255,0.60));
+}
+
+/* A: ホワイトグロー（後光）*/
+.capsule-ball::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 160%;
+  height: 160%;
+  background: radial-gradient(circle, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 70%);
+  border-radius: 50%;
+  z-index: 1;
+  pointer-events: none;
 }
 
 .capsule-ball__top {
@@ -1101,7 +1116,7 @@
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
   font-size: clamp(3.5rem, 12vw, 5.5rem);
-  filter: brightness(0) opacity(0.28);
+  filter: brightness(0) opacity(0.55);
   z-index: 2;
   pointer-events: none;
   user-select: none;
