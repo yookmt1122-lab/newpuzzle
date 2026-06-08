@@ -106,6 +106,88 @@ function shuffled(arr) {
   return [...arr].sort(() => Math.random() - 0.5)
 }
 
+// ── コンフェッティ ────────────────────────────────────────────────────────────
+const CONFETTI_COLORS = [
+  '#FF6B6B', '#FFE66D', '#4ECDC4', '#45B7D1',
+  '#FF9FF3', '#A29BFE', '#FD79A8', '#FDCB6E',
+  '#96CEB4', '#FF8C42',
+]
+
+function Confetti({ active }) {
+  const canvasRef = useRef(null)
+
+  useEffect(() => {
+    if (!active) return
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    canvas.width  = window.innerWidth
+    canvas.height = window.innerHeight
+
+    // 左右2か所のクラッカーから噴出
+    const particles = Array.from({ length: 140 }, () => {
+      const side = Math.random() < 0.5 ? 'left' : 'right'
+      const originX = side === 'left'
+        ? canvas.width * (0.1 + Math.random() * 0.15)
+        : canvas.width * (0.75 + Math.random() * 0.15)
+      return {
+        x:      originX,
+        y:      canvas.height * 0.25 + Math.random() * canvas.height * 0.1,
+        w:      Math.random() * 11 + 4,
+        h:      Math.random() * 5  + 3,
+        color:  CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+        vx:     (side === 'left' ? 1 : -1) * (Math.random() * 9 + 3),
+        vy:     -(Math.random() * 12 + 4),
+        angle:  Math.random() * Math.PI * 2,
+        va:     (Math.random() - 0.5) * 0.35,
+        gravity: 0.4,
+        opacity: 1,
+      }
+    })
+
+    const startTime = Date.now()
+    let rafId
+
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      const elapsed = Date.now() - startTime
+      let alive = false
+
+      for (const p of particles) {
+        p.vy  += p.gravity
+        p.x   += p.vx
+        p.y   += p.vy
+        p.angle += p.va
+        if (elapsed > 1800) p.opacity = Math.max(0, p.opacity - 0.018)
+
+        if (p.opacity > 0 && p.y < canvas.height + 30) {
+          alive = true
+          ctx.save()
+          ctx.globalAlpha = p.opacity
+          ctx.translate(p.x, p.y)
+          ctx.rotate(p.angle)
+          ctx.fillStyle = p.color
+          ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h)
+          ctx.restore()
+        }
+      }
+
+      if (alive) rafId = requestAnimationFrame(animate)
+    }
+
+    rafId = requestAnimationFrame(animate)
+    return () => cancelAnimationFrame(rafId)
+  }, [active])
+
+  if (!active) return null
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 500 }}
+    />
+  )
+}
+
 // ── 星プログレス ──────────────────────────────────────────────────────────────
 function StarProgress({ starsLit, keyEarnAnim, onCollect }) {
   const count = keyEarnAnim === 'stars' ? 3 : starsLit
@@ -464,6 +546,7 @@ function PlayScreen({ animal, clearCount, difficulty, pieceSize, onBack, onCompl
 
   return (
     <main className="puzzle">
+      <Confetti active={allPlaced} />
       <div className="play__header">
         <button className="btn-back" onClick={onBack}>◀ もどる</button>
         <div className="play__animal">
