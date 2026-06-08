@@ -744,11 +744,16 @@ function PlayScreen({ animal, clearCount, difficulty, pieceSize, onBack, onCompl
               y: '-50%',
               zIndex: 600,
               pointerEvents: 'none',
-              fontSize: '5rem',
+              fontSize: '4rem',
               fontWeight: 900,
-              color: '#FF6B6B',
-              textShadow: '0 4px 16px rgba(255,107,107,0.5), 0 2px 4px rgba(0,0,0,0.15)',
+              color: '#FF6B9D',
+              background: '#fff',
+              borderRadius: '999px',
+              padding: '10px 32px',
+              border: '3px solid #FF6B9D',
+              boxShadow: '0 4px 0 #E8D5C0, 0 6px 24px rgba(255,107,157,0.3)',
               userSelect: 'none',
+              whiteSpace: 'nowrap',
             }}
             initial={{ scale: 0.2, opacity: 0, y: '-50%' }}
             animate={{
