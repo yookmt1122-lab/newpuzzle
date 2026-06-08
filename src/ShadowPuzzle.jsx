@@ -245,7 +245,7 @@ function Balloons({ active, onPop }) {
         y:         canvas.height + 80 + Math.random() * 80,
         r:         30 + Math.random() * 18,
         color:     BALLOON_COLORS[i % BALLOON_COLORS.length],
-        speed:     0.7 + Math.random() * 0.5,
+        speed:     1.1 + Math.random() * 0.7,
         phase:     Math.random() * Math.PI * 2,
         amplitude: 18 + Math.random() * 18,
         delay:     i * 6 + Math.random() * 10,
@@ -278,7 +278,7 @@ function Balloons({ active, onPop }) {
     document.addEventListener('click',      handleTap)
 
     let rafId
-    const fadeStart = 520
+    const fadeStart = 750
 
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height)
@@ -322,7 +322,7 @@ function Balloons({ active, onPop }) {
         if (frame < b.delay) { alive = true; continue }
         b.y -= b.speed
         b.currentX = b.x + Math.sin(frame * 0.025 + b.phase) * b.amplitude
-        if (frame > fadeStart) b.opacity = Math.max(0, b.opacity - 0.006)
+        if (frame > fadeStart) b.opacity = Math.max(0, b.opacity - 0.004)
 
         if (b.opacity > 0 && b.y > -b.r * 2 - 100) {
           alive = true
@@ -636,9 +636,17 @@ function PlayScreen({ animal, clearCount, difficulty, pieceSize, onBack, onCompl
     shuffled(Array.from({ length: totalPieces }, (_, i) => i).filter(i => !transparentSet.has(i)))
   )
   const [drag, setDrag] = useState(null)
+  const [popLabels, setPopLabels] = useState([])
 
   const slotRefs     = useRef([])
   const keyEarnedRef = useRef(false)
+
+  const handleBalloonPop = useCallback(() => {
+    onBalloonPop()
+    const id = Date.now() + Math.random()
+    setPopLabels(prev => [...prev, id])
+    setTimeout(() => setPopLabels(prev => prev.filter(x => x !== id)), 850)
+  }, [onBalloonPop])
 
   const allPlaced = Object.values(placed).every(Boolean)
 
@@ -722,7 +730,38 @@ function PlayScreen({ animal, clearCount, difficulty, pieceSize, onBack, onCompl
   return (
     <main className="puzzle">
       <Confetti active={allPlaced} />
-      <Balloons active={allPlaced} onPop={onBalloonPop} />
+      <Balloons active={allPlaced} onPop={handleBalloonPop} />
+
+      <AnimatePresence>
+        {popLabels.map(id => (
+          <motion.div
+            key={id}
+            style={{
+              position: 'fixed',
+              left: '50%',
+              top: '44%',
+              x: '-50%',
+              y: '-50%',
+              zIndex: 600,
+              pointerEvents: 'none',
+              fontSize: '5rem',
+              fontWeight: 900,
+              color: '#FF6B6B',
+              textShadow: '0 4px 16px rgba(255,107,107,0.5), 0 2px 4px rgba(0,0,0,0.15)',
+              userSelect: 'none',
+            }}
+            initial={{ scale: 0.2, opacity: 0, y: '-50%' }}
+            animate={{
+              scale:   [0.2, 1.7, 1.2, 1.5, 1.0],
+              opacity: [0,   1,   1,   1,   0  ],
+              y:       ['-50%', '-65%', '-60%', '-70%', '-90%'],
+            }}
+            transition={{ duration: 0.85, times: [0, 0.25, 0.45, 0.65, 1], ease: 'easeOut' }}
+          >
+            ＋１
+          </motion.div>
+        ))}
+      </AnimatePresence>
       <div className="play__header">
         <button className="btn-back" onClick={onBack}>◀ もどる</button>
         <div className="play__animal">
