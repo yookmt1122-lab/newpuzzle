@@ -989,14 +989,14 @@ function GachaScreen({ onBack, coinCount, coinCounterRef, machineRef, onCoinTap,
             <div style={{ position: 'relative' }}>
               <CapsuleBall color={capsuleColor} toyEmoji={toyEmoji} isOpen={capsuleOpen} />
 
-              {/* おもちゃ：赤道位置（top:50%）から飛び出す */}
+              {/* おもちゃ：上半球が開いた空間（top:25%）に出現 */}
               <AnimatePresence>
                 {capsuleOpen && toyEmoji && (
                   <motion.div
                     key="toy"
                     style={{
                       position: 'absolute',
-                      top: '50%', left: '50%',
+                      top: '25%', left: '50%',
                       zIndex: 20,
                       pointerEvents: 'none',
                     }}
