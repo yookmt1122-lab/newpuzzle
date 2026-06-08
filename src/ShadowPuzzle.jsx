@@ -245,7 +245,7 @@ function Balloons({ active, onPop }) {
         y:         canvas.height + 80 + Math.random() * 80,
         r:         30 + Math.random() * 18,
         color:     BALLOON_COLORS[i % BALLOON_COLORS.length],
-        speed:     1.1 + Math.random() * 0.7,
+        speed:     2.2 + Math.random() * 1.4,
         phase:     Math.random() * Math.PI * 2,
         amplitude: 18 + Math.random() * 18,
         delay:     i * 6 + Math.random() * 10,
