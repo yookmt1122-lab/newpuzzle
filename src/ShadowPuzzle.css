@@ -1096,7 +1096,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5.5rem;
+  gap: 3rem;
 }
 
 .toy-spotlight__emoji {
@@ -1113,6 +1113,29 @@
   letter-spacing: 0.18em;
   text-shadow: 0 2px 8px rgba(255,255,255,0.95);
   user-select: none;
+}
+
+.toy-spotlight__close {
+  min-width: 180px;
+  height: 68px;
+  padding: 0 2rem;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(160deg, #FF6B6B, #FF3F5B);
+  color: #fff;
+  font-size: 2.8rem;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.05em;
+  box-shadow: 0 6px 0 #c02040, 0 8px 24px rgba(255,60,90,0.35);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.toy-spotlight__close:active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 #c02040, 0 4px 12px rgba(255,60,90,0.3);
 }
 
 /* ── ガチャカプセル真円 ─────────────────────────────────────────────────────── */

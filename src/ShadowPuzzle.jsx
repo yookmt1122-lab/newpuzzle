@@ -872,6 +872,17 @@ function CollectionScreen({ onBack, collection }) {
               >
                 {TOY_NAMES[selectedToy] ?? ''}
               </motion.div>
+
+              {/* 閉じるボタン */}
+              <motion.button
+                className="toy-spotlight__close"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.35 }}
+                onClick={(e) => { e.stopPropagation(); setSelectedToy(null) }}
+              >
+                ×
+              </motion.button>
             </div>
           </motion.div>
         )}
