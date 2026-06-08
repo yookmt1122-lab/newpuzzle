@@ -1076,10 +1076,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 248, 240, 0.88);
+  background: rgba(255, 248, 240, 0.90);
   backdrop-filter: blur(14px);
   z-index: 800;
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: pointer;
 }
 
 .toy-spotlight__sparkle {
@@ -1088,10 +1089,26 @@
   line-height: 1;
 }
 
+.toy-spotlight__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.8rem;
+}
+
 .toy-spotlight__emoji {
   font-size: 9rem;
   line-height: 1;
   filter: drop-shadow(0 8px 28px rgba(0,0,0,0.22));
+  user-select: none;
+}
+
+.toy-spotlight__name {
+  font-size: 2rem;
+  font-weight: 900;
+  color: #555;
+  letter-spacing: 0.18em;
+  text-shadow: 0 2px 8px rgba(255,255,255,0.95);
   user-select: none;
 }
 

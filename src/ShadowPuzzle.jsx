@@ -672,6 +672,24 @@ const TOYS = [
   '🚀', '🎯', '🦄', '🎠', '🎪',
 ]
 
+const TOY_NAMES = {
+  '🤖': 'ろぼっと',
+  '🧸': 'ぬいぐるみ',
+  '🪆': 'まとりょーしか',
+  '🚗': 'くるま',
+  '🛸': 'ゆーふぉー',
+  '🎸': 'ぎたー',
+  '🪀': 'よーよー',
+  '🔭': 'ぼうえんきょう',
+  '🧩': 'ぱずる',
+  '🪁': 'たこ',
+  '🚀': 'ろけっと',
+  '🎯': 'まとあて',
+  '🦄': 'ゆにこーん',
+  '🎠': 'めりーごーらんど',
+  '🎪': 'さーかす',
+}
+
 const SPARKLES = ['✨', '⭐', '🌟', '💫']
 
 function ToyReveal({ emoji }) {
@@ -768,7 +786,6 @@ function CollectionScreen({ onBack, collection }) {
   const [selectedToy, setSelectedToy] = useState(null)
 
   const handleToyTap = (emoji) => {
-    if (selectedToy) return
     setSelectedToy(emoji)
     playPop()
   }
@@ -802,51 +819,62 @@ function CollectionScreen({ onBack, collection }) {
         </div>
       )}
 
-      {/* タップ時スポットライトアニメーション */}
-      {selectedToy && (
-        <motion.div
-          className="toy-spotlight"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: [0, 1, 1, 1, 0] }}
-          transition={{ duration: 2.4, times: [0, 0.1, 0.55, 0.82, 1], ease: 'easeInOut' }}
-          onAnimationComplete={() => setSelectedToy(null)}
-        >
-          {/* 周囲のキラキラ */}
-          {Array.from({ length: 6 }, (_, i) => {
-            const angle = (i / 6) * 2 * Math.PI
-            return (
-              <motion.div
-                key={i}
-                className="toy-spotlight__sparkle"
-                initial={{ x: 0, y: 0, scale: 0, opacity: 0 }}
-                animate={{
-                  x:       Math.cos(angle) * 130,
-                  y:       Math.sin(angle) * 130,
-                  scale:   [0, 1.5, 1.0, 0],
-                  opacity: [0, 1,   1,   0],
-                }}
-                transition={{ duration: 1.7, delay: 0.12 + i * 0.04, times: [0, 0.2, 0.65, 1] }}
-              >
-                {SPARKLES[i % SPARKLES.length]}
-              </motion.div>
-            )
-          })}
-
-          {/* メイン絵文字 */}
+      {/* タップ時スポットライト（再タップで閉じる） */}
+      <AnimatePresence>
+        {selectedToy && (
           <motion.div
-            className="toy-spotlight__emoji"
-            initial={{ scale: 0, rotate: -20, opacity: 0 }}
-            animate={{
-              scale:   [0, 2.0, 1.3, 1.7, 1.5],
-              rotate:  [-20, 18, -10, 6, 0],
-              opacity: [0,  1,   1,   1,  1],
-            }}
-            transition={{ duration: 0.82, ease: 'easeOut' }}
+            className="toy-spotlight"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            onClick={() => setSelectedToy(null)}
           >
-            {selectedToy}
+            {/* 周囲のキラキラ */}
+            {Array.from({ length: 6 }, (_, i) => {
+              const angle = (i / 6) * 2 * Math.PI
+              return (
+                <motion.div
+                  key={i}
+                  className="toy-spotlight__sparkle"
+                  initial={{ x: 0, y: 0, scale: 0, opacity: 0 }}
+                  animate={{
+                    x:       Math.cos(angle) * 130,
+                    y:       Math.sin(angle) * 130,
+                    scale:   [0, 1.5, 1.0],
+                    opacity: [0, 1,   1  ],
+                  }}
+                  transition={{ duration: 0.65, delay: 0.08 + i * 0.04, times: [0, 0.3, 1] }}
+                >
+                  {SPARKLES[i % SPARKLES.length]}
+                </motion.div>
+              )
+            })}
+
+            <div className="toy-spotlight__content">
+              {/* メイン絵文字 */}
+              <motion.div
+                className="toy-spotlight__emoji"
+                initial={{ scale: 0, rotate: -20, opacity: 0 }}
+                animate={{ scale: 1.5, rotate: 0, opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 380, damping: 16 }}
+              >
+                {selectedToy}
+              </motion.div>
+
+              {/* おもちゃ名 */}
+              <motion.div
+                className="toy-spotlight__name"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.28, duration: 0.35 }}
+              >
+                {TOY_NAMES[selectedToy] ?? ''}
+              </motion.div>
+            </div>
           </motion.div>
-        </motion.div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   )
 }
