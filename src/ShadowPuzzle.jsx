@@ -881,7 +881,7 @@ function CollectionScreen({ onBack, collection }) {
 }
 
 // ── ガチャガチャ画面 ──────────────────────────────────────────────────────────
-function GachaScreen({ onBack, coinCount, coinCounterRef, machineRef, onCoinTap, insertedCoins, onToyCollected, onToyTap, collectedCount }) {
+function GachaScreen({ onBack, onCollection, coinCount, coinCounterRef, machineRef, onCoinTap, insertedCoins, onToyCollected, onToyTap, collectedCount }) {
   const [phase,         setPhase]        = useState('idle')  // 'idle' | 'capsule'
   const [showWhiteout,  setShowWhiteout] = useState(false)
   const [capsuleColor,  setCapsuleColor] = useState(null)
@@ -997,10 +997,10 @@ function GachaScreen({ onBack, coinCount, coinCounterRef, machineRef, onCoinTap,
 
       <div className="gacha-screen__footer">
         <button className="btn-gacha-back" onClick={onBack}>◀ もどる</button>
-        <div className="gacha-toybox-badge" ref={toyboxBadgeRef}>
-          🧸
+        <button className="btn-collection" ref={toyboxBadgeRef} onClick={onCollection}>
+          🧸 おもちゃばこ
           {collectedCount > 0 && <span className="gacha-toybox-badge__count">{collectedCount}</span>}
-        </div>
+        </button>
       </div>
 
       {/* ホワイトアウト */}
@@ -1649,6 +1649,7 @@ export default function ShadowPuzzle() {
           onToyCollected={handleToyCollected}
           onToyTap={handleToyTap}
           collectedCount={toyCollection.length}
+          onCollection={() => { startBgm('collection'); setScreen('collection') }}
         />
       ) : screen === 'select' ? (
         <SelectScreen
