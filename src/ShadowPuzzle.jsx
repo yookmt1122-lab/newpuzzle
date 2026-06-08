@@ -687,14 +687,14 @@ function ToyReveal({ emoji }) {
 
 // ── ガチャカプセル ────────────────────────────────────────────────────────────
 const CAPSULE_COLORS = [
-  { light: '#FF9999', base: '#FF6B6B', dark: '#C0392B' },
-  { light: '#FFF0A0', base: '#FFE66D', dark: '#F0A500' },
-  { light: '#7EDED8', base: '#4ECDC4', dark: '#1A9C90' },
-  { light: '#A0CFFF', base: '#74B9FF', dark: '#2471C8' },
-  { light: '#C5BFFE', base: '#A29BFE', dark: '#5A50CC' },
-  { light: '#FFAACB', base: '#FD79A8', dark: '#C0185A' },
-  { light: '#88F5D8', base: '#55EFC4', dark: '#00A878' },
-  { light: '#FEDC98', base: '#FDCB6E', dark: '#C86000' },
+  { light: '#FF6666', base: '#FF0000', dark: '#AA0000' },
+  { light: '#FFE033', base: '#FFD700', dark: '#B89000' },
+  { light: '#33CC33', base: '#00AA00', dark: '#006600' },
+  { light: '#3399FF', base: '#0055FF', dark: '#003399' },
+  { light: '#CC44FF', base: '#AA00FF', dark: '#6600BB' },
+  { light: '#FF6699', base: '#FF0066', dark: '#AA0044' },
+  { light: '#00DDDD', base: '#00AAAA', dark: '#006666' },
+  { light: '#FF9933', base: '#FF6600', dark: '#BB3300' },
 ]
 
 function CapsuleBall({ color, toyEmoji, isOpen }) {
