@@ -245,7 +245,7 @@ function Balloons({ active }) {
         y:         canvas.height + 80 + Math.random() * 80,
         r:         30 + Math.random() * 18,
         color:     BALLOON_COLORS[i % BALLOON_COLORS.length],
-        speed:     1.4 + Math.random() * 1.1,
+        speed:     0.7 + Math.random() * 0.5,
         phase:     Math.random() * Math.PI * 2,
         amplitude: 18 + Math.random() * 18,
         delay:     i * 6 + Math.random() * 10,
@@ -277,7 +277,7 @@ function Balloons({ active }) {
     document.addEventListener('click',      handleTap)
 
     let rafId
-    const fadeStart = 220
+    const fadeStart = 520
 
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height)
@@ -321,7 +321,7 @@ function Balloons({ active }) {
         if (frame < b.delay) { alive = true; continue }
         b.y -= b.speed
         b.currentX = b.x + Math.sin(frame * 0.025 + b.phase) * b.amplitude
-        if (frame > fadeStart) b.opacity = Math.max(0, b.opacity - 0.012)
+        if (frame > fadeStart) b.opacity = Math.max(0, b.opacity - 0.006)
 
         if (b.opacity > 0 && b.y > -b.r * 2 - 100) {
           alive = true
