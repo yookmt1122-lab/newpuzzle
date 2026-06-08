@@ -224,7 +224,7 @@ function drawBalloon(ctx, x, y, r, color) {
   ctx.stroke()
 }
 
-function Balloons({ active }) {
+function Balloons({ active, onPop }) {
   const canvasRef = useRef(null)
 
   useEffect(() => {
@@ -269,6 +269,7 @@ function Balloons({ active }) {
         if (dx * dx + dy * dy <= 1) {
           b.popped = true
           playPop()
+          onPop?.()
           break
         }
       }
@@ -411,6 +412,16 @@ const KeyCounter = forwardRef(function KeyCounter({ count }, ref) {
     </div>
   )
 })
+
+// ── 風船スコアカウンター ──────────────────────────────────────────────────────
+function BalloonScore({ count }) {
+  return (
+    <div className="balloon-score">
+      <span className="balloon-score__icon">🎈</span>
+      <span className="balloon-score__count">{count}</span>
+    </div>
+  )
+}
 
 // ── 飛ぶ鍵アニメーション ──────────────────────────────────────────────────────
 function FlyingKey({ from, to, onComplete }) {
@@ -609,7 +620,7 @@ function detectTransparentPieces(emoji, nRows, nCols) {
 }
 
 // ── プレイ画面 ────────────────────────────────────────────────────────────────
-function PlayScreen({ animal, clearCount, difficulty, pieceSize, onBack, onComplete }) {
+function PlayScreen({ animal, clearCount, difficulty, pieceSize, onBack, onComplete, onBalloonPop }) {
   const { nRows, nCols } = DIFFICULTY_OPTIONS.find(d => d.key === difficulty)
   const totalPieces = nRows * nCols
   const cellW = pieceSize / nCols
@@ -711,7 +722,7 @@ function PlayScreen({ animal, clearCount, difficulty, pieceSize, onBack, onCompl
   return (
     <main className="puzzle">
       <Confetti active={allPlaced} />
-      <Balloons active={allPlaced} />
+      <Balloons active={allPlaced} onPop={onBalloonPop} />
       <div className="play__header">
         <button className="btn-back" onClick={onBack}>◀ もどる</button>
         <div className="play__animal">
@@ -823,9 +834,10 @@ export default function ShadowPuzzle() {
   })
   const [clearCount,   setClearCount]   = useState(() => lsGet(LS.clearCount, 0))
 
-  const [flyKey,       setFlyKey]       = useState(null)
-  const [soundOn,      setSoundOn]      = useState(true)
-  const [keyEarnAnim,  setKeyEarnAnim]  = useState(null)
+  const [flyKey,        setFlyKey]       = useState(null)
+  const [soundOn,       setSoundOn]      = useState(true)
+  const [keyEarnAnim,   setKeyEarnAnim]  = useState(null)
+  const [balloonScore,  setBalloonScore] = useState(0)
 
   const keyCounterRef = useRef(null)
   const pendingKeyRef = useRef(false)
@@ -954,11 +966,13 @@ export default function ShadowPuzzle() {
   }, [])
 
   const handleStart = useCallback(() => {
+    setBalloonScore(0)
     startBgm('play')
     setScreen('play')
   }, [])
 
   const handleBack = useCallback(() => {
+    setBalloonScore(0)
     startBgm('select')
     setScreen('select')
   }, [])
@@ -966,6 +980,7 @@ export default function ShadowPuzzle() {
   return (
     <>
       <KeyCounter ref={keyCounterRef} count={keyCount} />
+      {screen === 'play' && <BalloonScore count={balloonScore} />}
 
       <button className="btn-debug-reset" onClick={handleDebugReset} aria-label="データをリセット">
         🗑
@@ -1013,6 +1028,7 @@ export default function ShadowPuzzle() {
           pieceSize={pieceSize}
           onBack={handleBack}
           onComplete={handleComplete}
+          onBalloonPop={() => setBalloonScore(s => s + 1)}
         />
       )}
     </>

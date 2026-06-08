@@ -80,6 +80,35 @@
   text-align: center;
 }
 
+/* ── 風船スコアカウンター ───────────────────────────────────────────────────── */
+.balloon-score {
+  position: fixed;
+  top: 16px;
+  right: 130px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.88);
+  padding: 8px 18px;
+  border-radius: 999px;
+  box-shadow: 0 4px 0 #E8D5C0, 0 6px 20px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(6px);
+}
+
+.balloon-score__icon {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.balloon-score__count {
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: #FF6B6B;
+  min-width: 1.2ch;
+  text-align: center;
+}
+
 /* ── 星プログレス ─────────────────────────────────────────────────────────── */
 .star-progress {
   position: relative;
