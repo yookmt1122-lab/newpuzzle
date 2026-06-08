@@ -166,6 +166,23 @@ const PLAY_MELODY = [
   [523, 2], [0, 2],
 ]
 
+// コレクションBGM: やわらかいオルゴール調
+const COLLECTION_TEMPO = 0.24
+const COLLECTION_MELODY = [
+  // フレーズ1: やわらかい上昇
+  [523, 1], [659, 1], [784, 1], [880, 1],
+  [784, 1], [659, 1], [523, 2],
+  // フレーズ2: 優しい揺れ
+  [659, 1], [784, 1], [659, 1], [587, 1],
+  [523, 1], [440, 1], [523, 2],
+  // フレーズ3: 少し高め
+  [784, 1], [880, 1], [1047, 1], [880, 1],
+  [784, 1], [659, 1], [784, 2],
+  // フレーズ4: おだやかに着地
+  [523, 0.5], [659, 0.5], [784, 1], [659, 1],
+  [587, 1], [523, 2], [0, 2],
+]
+
 // ガチャガチャBGM: 跳ねるカーニバル調
 const GACHA_TEMPO = 0.11
 const GACHA_MELODY = [
@@ -198,11 +215,13 @@ export function startBgm(type = 'select') {
   bgmPlaying = true
   let melody, tempo, wave
   if (type === 'play') {
-    melody = PLAY_MELODY;  tempo = PLAY_TEMPO;  wave = 'triangle'
+    melody = PLAY_MELODY;        tempo = PLAY_TEMPO;        wave = 'triangle'
   } else if (type === 'gacha') {
-    melody = GACHA_MELODY; tempo = GACHA_TEMPO; wave = 'square'
+    melody = GACHA_MELODY;       tempo = GACHA_TEMPO;       wave = 'square'
+  } else if (type === 'collection') {
+    melody = COLLECTION_MELODY;  tempo = COLLECTION_TEMPO;  wave = 'sine'
   } else {
-    melody = SELECT_MELODY; tempo = SELECT_TEMPO; wave = 'triangle'
+    melody = SELECT_MELODY;      tempo = SELECT_TEMPO;      wave = 'triangle'
   }
   withResume(() => {
     if (bgmPlaying) scheduleBgm(0, melody, tempo, wave)

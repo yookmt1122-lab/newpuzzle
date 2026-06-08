@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect, forwardRef } from 'react'
+import { useState, useRef, useCallback, useEffect, forwardRef, useId } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import './ShadowPuzzle.css'
 import {
@@ -511,7 +511,8 @@ function FlyingKey({ from, to, onComplete }) {
 // ── 選択画面 ──────────────────────────────────────────────────────────────────
 function SelectScreen({ animalIndex, lockedStatus, keyCount, isAnimating,
                         difficulty, starsLit, keyEarnAnim, onCollect,
-                        onPrev, onNext, onStart, onUnlock, onDifficultyChange, onGacha, coinCount }) {
+                        onPrev, onNext, onStart, onUnlock, onDifficultyChange,
+                        onGacha, coinCount, onCollection }) {
   const n = ANIMALS.length
   const prevIdx = (animalIndex - 1 + n) % n
   const nextIdx = (animalIndex + 1) % n
@@ -592,15 +593,6 @@ function SelectScreen({ animalIndex, lockedStatus, keyCount, isAnimating,
         <button className="carousel__btn" onClick={onNext} aria-label="次の動物">▶</button>
       </div>
 
-      <div className="carousel__dots">
-        {ANIMALS.map((_, i) => (
-          <span
-            key={i}
-            className={`carousel__dot${i === animalIndex ? ' carousel__dot--active' : ''}`}
-          />
-        ))}
-      </div>
-
       <div className="difficulty-selector">
         {DIFFICULTY_OPTIONS.map(({ key, label }) => (
           <button
@@ -632,12 +624,277 @@ function SelectScreen({ animalIndex, lockedStatus, keyCount, isAnimating,
           🎰 ガチャガチャモード
         </button>
       )}
+
+      <button className="btn-collection" onClick={onCollection}>
+        🧸 おもちゃばこ
+      </button>
+    </div>
+  )
+}
+
+// ── ガチャおもちゃ ────────────────────────────────────────────────────────────
+const TOYS = [
+  '🤖', '🧸', '🪆', '🚗', '🛸',
+  '🎸', '🪀', '🔭', '🧩', '🪁',
+  '🚀', '🎯', '🦄', '🎠', '🎪',
+]
+
+const SPARKLES = ['✨', '⭐', '🌟', '💫']
+
+function ToyReveal({ emoji }) {
+  const count = 8
+  return (
+    <div style={{ position: 'relative', width: 0, height: 0 }}>
+      {Array.from({ length: count }, (_, i) => {
+        const angle = (i / count) * 2 * Math.PI
+        const dist  = 100
+        return (
+          <motion.div
+            key={i}
+            style={{ position: 'absolute', fontSize: '1.7rem', lineHeight: 1 }}
+            initial={{ x: 0, y: 0, scale: 0, opacity: 0 }}
+            animate={{
+              x:       Math.cos(angle) * dist,
+              y:       Math.sin(angle) * dist,
+              scale:   [0, 1.4, 0.9, 0],
+              opacity: [0, 1,   1,   0],
+            }}
+            transition={{ duration: 0.75, delay: 0.1 + i * 0.035, ease: 'easeOut' }}
+          >
+            {SPARKLES[i % SPARKLES.length]}
+          </motion.div>
+        )
+      })}
+
+      <motion.div
+        style={{
+          position: 'absolute',
+          fontSize: '5.5rem',
+          lineHeight: 1,
+          transform: 'translate(-50%, -50%)',
+          filter: 'drop-shadow(0 6px 18px rgba(0,0,0,0.28))',
+          userSelect: 'none',
+        }}
+        initial={{ scale: 0, opacity: 0, rotate: -15 }}
+        animate={{ scale: [0, 1.6, 1.1, 1.3], opacity: 1, rotate: [-15, 10, -5, 0] }}
+        transition={{ type: 'spring', stiffness: 380, damping: 16, delay: 0.06 }}
+      >
+        {emoji}
+      </motion.div>
+    </div>
+  )
+}
+
+// ── ガチャカプセル ────────────────────────────────────────────────────────────
+const CAPSULE_COLORS = [
+  { light: '#FF9999', base: '#FF6B6B', dark: '#C0392B' },
+  { light: '#FFF0A0', base: '#FFE66D', dark: '#F0A500' },
+  { light: '#7EDED8', base: '#4ECDC4', dark: '#1A9C90' },
+  { light: '#A0CFFF', base: '#74B9FF', dark: '#2471C8' },
+  { light: '#C5BFFE', base: '#A29BFE', dark: '#5A50CC' },
+  { light: '#FFAACB', base: '#FD79A8', dark: '#C0185A' },
+  { light: '#88F5D8', base: '#55EFC4', dark: '#00A878' },
+  { light: '#FEDC98', base: '#FDCB6E', dark: '#C86000' },
+]
+
+function CapsuleBall({ color, toyEmoji, isOpen }) {
+  return (
+    <div className="capsule-ball">
+      <AnimatePresence>
+        {!isOpen && (
+          <motion.div
+            className="capsule-ball__silhouette"
+            exit={{ opacity: 0, scale: 0.6 }}
+            transition={{ duration: 0.18 }}
+          >
+            {toyEmoji}
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <motion.div
+        className="capsule-ball__top"
+        animate={isOpen ? { y: -190, rotate: -20, opacity: 0.75 } : { y: 0, rotate: 0, opacity: 1 }}
+        transition={{ type: 'spring', stiffness: 420, damping: 22 }}
+      >
+        <div className="capsule-ball__shine" />
+      </motion.div>
+      <motion.div
+        className="capsule-ball__bottom"
+        style={{ background: `radial-gradient(circle at 38% 28%, ${color.light}, ${color.base} 58%, ${color.dark})` }}
+        animate={isOpen ? { y: 42 } : { y: 0 }}
+        transition={{ type: 'spring', stiffness: 420, damping: 22 }}
+      >
+        <div className="capsule-ball__shadow" />
+      </motion.div>
+    </div>
+  )
+}
+
+// ── コレクション画面 ──────────────────────────────────────────────────────────
+function CollectionScreen({ onBack, collection }) {
+  const [selectedToy, setSelectedToy] = useState(null)
+
+  const handleToyTap = (emoji) => {
+    if (selectedToy) return
+    setSelectedToy(emoji)
+    playPop()
+  }
+
+  return (
+    <div className="collection-screen">
+      <div className="collection-screen__header">
+        <button className="btn-back" onClick={onBack}>◀ もどる</button>
+        <h1 className="collection-screen__title">🧸 おもちゃばこ</h1>
+      </div>
+
+      {collection.length === 0 ? (
+        <div className="collection-empty">
+          <div className="collection-empty__icon">📦</div>
+          <p className="collection-empty__text">ガチャでおもちゃをゲットしよう！</p>
+        </div>
+      ) : (
+        <div className="collection-grid">
+          {collection.map((emoji, i) => (
+            <motion.div
+              key={emoji}
+              className="collection-item"
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 20, delay: i * 0.055 }}
+              onClick={() => handleToyTap(emoji)}
+            >
+              <span className="collection-item__emoji">{emoji}</span>
+            </motion.div>
+          ))}
+        </div>
+      )}
+
+      {/* タップ時スポットライトアニメーション */}
+      {selectedToy && (
+        <motion.div
+          className="toy-spotlight"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 1, 1, 1, 0] }}
+          transition={{ duration: 2.4, times: [0, 0.1, 0.55, 0.82, 1], ease: 'easeInOut' }}
+          onAnimationComplete={() => setSelectedToy(null)}
+        >
+          {/* 周囲のキラキラ */}
+          {Array.from({ length: 6 }, (_, i) => {
+            const angle = (i / 6) * 2 * Math.PI
+            return (
+              <motion.div
+                key={i}
+                className="toy-spotlight__sparkle"
+                initial={{ x: 0, y: 0, scale: 0, opacity: 0 }}
+                animate={{
+                  x:       Math.cos(angle) * 130,
+                  y:       Math.sin(angle) * 130,
+                  scale:   [0, 1.5, 1.0, 0],
+                  opacity: [0, 1,   1,   0],
+                }}
+                transition={{ duration: 1.7, delay: 0.12 + i * 0.04, times: [0, 0.2, 0.65, 1] }}
+              >
+                {SPARKLES[i % SPARKLES.length]}
+              </motion.div>
+            )
+          })}
+
+          {/* メイン絵文字 */}
+          <motion.div
+            className="toy-spotlight__emoji"
+            initial={{ scale: 0, rotate: -20, opacity: 0 }}
+            animate={{
+              scale:   [0, 2.0, 1.3, 1.7, 1.5],
+              rotate:  [-20, 18, -10, 6, 0],
+              opacity: [0,  1,   1,   1,  1],
+            }}
+            transition={{ duration: 0.82, ease: 'easeOut' }}
+          >
+            {selectedToy}
+          </motion.div>
+        </motion.div>
+      )}
     </div>
   )
 }
 
 // ── ガチャガチャ画面 ──────────────────────────────────────────────────────────
-function GachaScreen({ onBack, coinCount, coinCounterRef, machineRef, onCoinTap }) {
+function GachaScreen({ onBack, coinCount, coinCounterRef, machineRef, onCoinTap, insertedCoins, onToyCollected }) {
+  const [phase,         setPhase]        = useState('idle')  // 'idle' | 'capsule'
+  const [showWhiteout,  setShowWhiteout] = useState(false)
+  const [capsuleColor,  setCapsuleColor] = useState(null)
+  const [capsuleOpen,   setCapsuleOpen]  = useState(false)
+  const [toyEmoji,      setToyEmoji]     = useState(null)
+  const [arrowRotation, setArrowRotation] = useState(0)
+  const [isDragging,    setIsDragging]   = useState(false)
+
+  const arrowRef   = useRef(null)
+  const swipeState = useRef({ active: false, cx: 0, cy: 0, lastAngle: 0, totalAngle: 0 })
+
+  const triggerGacha = useCallback(() => {
+    const color = CAPSULE_COLORS[Math.floor(Math.random() * CAPSULE_COLORS.length)]
+    const toy   = TOYS[Math.floor(Math.random() * TOYS.length)]
+    setCapsuleColor(color)
+    setToyEmoji(toy)
+    setCapsuleOpen(false)
+    setShowWhiteout(true)
+    setTimeout(() => setPhase('capsule'), 570)
+  }, [])
+
+  const onSwipeStart = useCallback((e) => {
+    if (phase !== 'idle' || insertedCoins < 3) return
+    e.preventDefault()
+    const rect = arrowRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const cx = rect.left + rect.width  / 2
+    const cy = rect.top  + rect.height / 2
+    const pt = e.touches ? e.touches[0] : e
+    const angle = Math.atan2(pt.clientY - cy, pt.clientX - cx) * (180 / Math.PI)
+    swipeState.current = { active: true, cx, cy, lastAngle: angle, totalAngle: 0 }
+    setIsDragging(true)
+    setArrowRotation(0)
+  }, [phase, insertedCoins])
+
+  const onSwipeMove = useCallback((e) => {
+    const s = swipeState.current
+    if (!s.active) return
+    const pt = e.touches ? e.touches[0] : e
+    const angle = Math.atan2(pt.clientY - s.cy, pt.clientX - s.cx) * (180 / Math.PI)
+    let delta = angle - s.lastAngle
+    if (delta >  180) delta -= 360
+    if (delta < -180) delta += 360
+    if (delta > 0) {
+      s.totalAngle += delta
+      setArrowRotation(s.totalAngle)
+    }
+    s.lastAngle = angle
+    if (s.totalAngle >= 270) {
+      s.active = false
+      setIsDragging(false)
+      setArrowRotation(0)
+      triggerGacha()
+    }
+  }, [triggerGacha])
+
+  const onSwipeEnd = useCallback(() => {
+    swipeState.current.active = false
+    setIsDragging(false)
+    setArrowRotation(0)
+  }, [])
+
+  useEffect(() => {
+    window.addEventListener('touchmove', onSwipeMove, { passive: false })
+    window.addEventListener('touchend',  onSwipeEnd)
+    window.addEventListener('mousemove', onSwipeMove)
+    window.addEventListener('mouseup',   onSwipeEnd)
+    return () => {
+      window.removeEventListener('touchmove', onSwipeMove)
+      window.removeEventListener('touchend',  onSwipeEnd)
+      window.removeEventListener('mousemove', onSwipeMove)
+      window.removeEventListener('mouseup',   onSwipeEnd)
+    }
+  }, [onSwipeMove, onSwipeEnd])
+
   return (
     <div className="gacha-screen">
       <div className="gacha-screen__bg-deco" aria-hidden="true">
@@ -647,23 +904,99 @@ function GachaScreen({ onBack, coinCount, coinCounterRef, machineRef, onCoinTap 
       </div>
 
       <div
-        className={`gacha-coin-wrapper${coinCount > 0 ? ' gacha-coin-wrapper--active' : ''}`}
-        onClick={coinCount > 0 ? onCoinTap : undefined}
-        role={coinCount > 0 ? 'button' : undefined}
-        aria-label={coinCount > 0 ? 'コインを投入する' : undefined}
+        className={`gacha-coin-wrapper${coinCount > 0 && phase === 'idle' ? ' gacha-coin-wrapper--active' : ''}`}
+        onClick={coinCount > 0 && phase === 'idle' ? onCoinTap : undefined}
+        role={coinCount > 0 && phase === 'idle' ? 'button' : undefined}
+        aria-label={coinCount > 0 && phase === 'idle' ? 'コインを投入する' : undefined}
       >
-        <CoinCounter ref={coinCounterRef} count={coinCount} active={coinCount > 0} />
+        <CoinCounter ref={coinCounterRef} count={coinCount} active={coinCount > 0 && phase === 'idle'} />
       </div>
 
       <h1 className="gacha-screen__title">ガチャガチャ！</h1>
 
       <div className="gacha-screen__machine">
-        <img ref={machineRef} src="/gachagacha.png" alt="ガチャガチャ筐体" className="gacha-screen__img" />
+        <img ref={machineRef} src="/gachagacha.png" alt="ガチャガチャ筐体" className="gacha-screen__img" draggable={false} />
+        {insertedCoins >= 3 && phase === 'idle' && (
+          <div
+            className="gacha-turn-arrow"
+            ref={arrowRef}
+            onMouseDown={onSwipeStart}
+            onTouchStart={onSwipeStart}
+            aria-hidden="true"
+            style={isDragging
+              ? { transform: `translate(-50%, -50%) rotate(${arrowRotation}deg)`, animation: 'none', cursor: 'grabbing' }
+              : { cursor: 'grab' }
+            }
+          >↻</div>
+        )}
       </div>
 
-      <button className="btn-gacha-back" onClick={onBack}>
-        ◀ もどる
-      </button>
+      <button className="btn-gacha-back" onClick={onBack}>◀ もどる</button>
+
+      {/* ホワイトアウト */}
+      <AnimatePresence>
+        {showWhiteout && (
+          <motion.div
+            key="whiteout"
+            style={{ position: 'fixed', inset: 0, background: 'white', zIndex: 3000, pointerEvents: 'none' }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0, 1, 1, 0] }}
+            transition={{ duration: 1.1, times: [0, 0.36, 0.63, 1], ease: 'easeInOut' }}
+            onAnimationComplete={() => setShowWhiteout(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* カプセル */}
+      <AnimatePresence>
+        {phase === 'capsule' && capsuleColor && (
+          <motion.div
+            key="capsule"
+            style={{
+              position: 'fixed', inset: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              zIndex: 2500,
+              cursor: 'pointer',
+            }}
+            onClick={() => {
+              if (!capsuleOpen) {
+                setCapsuleOpen(true)
+                playPop()
+                onToyCollected(toyEmoji)
+              } else {
+                setPhase('idle')
+                setCapsuleOpen(false)
+              }
+            }}
+            initial={{ scale: 0.2, opacity: 0, y: -60 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 15 }}
+          >
+            <div style={{ position: 'relative' }}>
+              <CapsuleBall color={capsuleColor} toyEmoji={toyEmoji} isOpen={capsuleOpen} />
+
+              {/* おもちゃ：赤道位置（top:50%）から飛び出す */}
+              <AnimatePresence>
+                {capsuleOpen && toyEmoji && (
+                  <motion.div
+                    key="toy"
+                    style={{
+                      position: 'absolute',
+                      top: '50%', left: '50%',
+                      zIndex: 20,
+                      pointerEvents: 'none',
+                    }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                  >
+                    <ToyReveal emoji={toyEmoji} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
@@ -930,10 +1263,11 @@ function PlayScreen({ animal, clearCount, difficulty, pieceSize, onBack, onCompl
 
 // ── localStorage キー ─────────────────────────────────────────────────────────
 const LS = {
-  keyCount:    'puzzle_keyCount',
-  locked:      'puzzle_lockedStatus',
-  clearCount:  'puzzle_clearCount',
-  coinCount:   'puzzle_coinCount',
+  keyCount:      'puzzle_keyCount',
+  locked:        'puzzle_lockedStatus',
+  clearCount:    'puzzle_clearCount',
+  coinCount:     'puzzle_coinCount',
+  toyCollection: 'puzzle_toyCollection',
 }
 
 function lsGet(key, fallback) {
@@ -967,15 +1301,17 @@ export default function ShadowPuzzle() {
   const [flyKey,        setFlyKey]       = useState(null)
   const [soundOn,       setSoundOn]      = useState(true)
   const [keyEarnAnim,   setKeyEarnAnim]  = useState(null)
-  const [balloonScore,  setBalloonScore] = useState(0)
-  const [coinCount,     setCoinCount]    = useState(() => lsGet(LS.coinCount, 0))
+  const [balloonScore,   setBalloonScore]  = useState(0)
+  const [coinCount,      setCoinCount]     = useState(() => lsGet(LS.coinCount, 0))
+  const [toyCollection,  setToyCollection] = useState(() => lsGet(LS.toyCollection, []))
 
   const keyCounterRef  = useRef(null)
   const gachaCoinRef   = useRef(null)
   const gachaMachineRef = useRef(null)
   const pendingKeyRef  = useRef(false)
 
-  const [flyingCoin, setFlyingCoin] = useState(null)
+  const [flyingCoin,         setFlyingCoin]         = useState(null)
+  const [gachaInsertedCoins, setGachaInsertedCoins] = useState(0)
 
   useEffect(() => {
     let started = false
@@ -999,16 +1335,17 @@ export default function ShadowPuzzle() {
     setSoundOn(prev => {
       const next = !prev
       setMuted(!next)
-      if (next) startBgm(screen === 'play' ? 'play' : 'select')
+      if (next) startBgm(screen === 'play' ? 'play' : screen === 'gacha' ? 'gacha' : 'select')
       else stopBgm()
       return next
     })
   }, [screen])
 
-  useEffect(() => { localStorage.setItem(LS.keyCount,   JSON.stringify(keyCount))     }, [keyCount])
-  useEffect(() => { localStorage.setItem(LS.locked,     JSON.stringify(lockedStatus)) }, [lockedStatus])
-  useEffect(() => { localStorage.setItem(LS.clearCount, JSON.stringify(clearCount))   }, [clearCount])
-  useEffect(() => { localStorage.setItem(LS.coinCount,  JSON.stringify(coinCount))    }, [coinCount])
+  useEffect(() => { localStorage.setItem(LS.keyCount,      JSON.stringify(keyCount))      }, [keyCount])
+  useEffect(() => { localStorage.setItem(LS.locked,        JSON.stringify(lockedStatus))  }, [lockedStatus])
+  useEffect(() => { localStorage.setItem(LS.clearCount,    JSON.stringify(clearCount))    }, [clearCount])
+  useEffect(() => { localStorage.setItem(LS.coinCount,     JSON.stringify(coinCount))     }, [coinCount])
+  useEffect(() => { localStorage.setItem(LS.toyCollection, JSON.stringify(toyCollection)) }, [toyCollection])
 
   // 10点たまったら自動でコイン1枚に交換
   useEffect(() => {
@@ -1039,8 +1376,13 @@ export default function ShadowPuzzle() {
     setClearCount(0)
     setCoinCount(0)
     setBalloonScore(0)
+    setToyCollection([])
     setScreen('select')
     setAnimalIndex(0)
+  }, [])
+
+  const handleToyCollected = useCallback((emoji) => {
+    setToyCollection(prev => prev.includes(emoji) ? prev : [...prev, emoji])
   }, [])
 
   const handleUnlockAll = useCallback(() => {
@@ -1141,7 +1483,7 @@ export default function ShadowPuzzle() {
   return (
     <>
       <KeyCounter ref={keyCounterRef} count={keyCount} />
-      {screen === 'play' && (
+      {screen !== 'gacha' && (
         <div className="score-group">
           <BalloonScore count={balloonScore} />
           <CoinCounter  count={coinCount} />
@@ -1172,18 +1514,28 @@ export default function ShadowPuzzle() {
             key="flying-coin"
             from={flyingCoin.from}
             to={flyingCoin.to}
-            onComplete={() => setFlyingCoin(null)}
+            onComplete={() => {
+              setFlyingCoin(null)
+              setGachaInsertedCoins(c => c + 1)
+            }}
           />
         )}
       </AnimatePresence>
 
-      {screen === 'gacha' ? (
-        <GachaScreen
+      {screen === 'collection' ? (
+        <CollectionScreen
           onBack={() => { startBgm('select'); setScreen('select') }}
+          collection={toyCollection}
+        />
+      ) : screen === 'gacha' ? (
+        <GachaScreen
+          onBack={() => { startBgm('select'); setScreen('select'); setGachaInsertedCoins(0) }}
           coinCount={coinCount}
           coinCounterRef={gachaCoinRef}
           machineRef={gachaMachineRef}
           onCoinTap={handleGachaCoinTap}
+          insertedCoins={gachaInsertedCoins}
+          onToyCollected={handleToyCollected}
         />
       ) : screen === 'select' ? (
         <SelectScreen
@@ -1202,6 +1554,7 @@ export default function ShadowPuzzle() {
           onDifficultyChange={setDifficulty}
           onGacha={() => { startBgm('gacha'); setScreen('gacha') }}
           coinCount={coinCount}
+          onCollection={() => { startBgm('collection'); setScreen('collection') }}
         />
       ) : (
         <PlayScreen
