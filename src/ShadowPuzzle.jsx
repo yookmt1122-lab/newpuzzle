@@ -470,6 +470,39 @@ function FlyingCoin({ from, to, onComplete }) {
   )
 }
 
+function FlyingToy({ from, to, emoji, onComplete }) {
+  const dx = to.x - from.x
+  const dy = to.y - from.y
+  const dist = Math.hypot(dx, dy)
+  const arcHeight = Math.min(dist * 0.4, 160)
+  return (
+    <motion.div
+      style={{
+        position: 'fixed',
+        left: from.x - 35,
+        top:  from.y - 35,
+        width: 70, height: 70,
+        fontSize: '3.5rem',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        zIndex: 9999,
+        pointerEvents: 'none',
+      }}
+      initial={{ x: 0, y: 0, scale: 1.2, opacity: 1, rotate: 0 }}
+      animate={{
+        x:       [0, dx * 0.45,             dx],
+        y:       [0, dy * 0.45 - arcHeight, dy],
+        scale:   [1.2, 1.0,                 0.2],
+        opacity: [1,   1,                   0],
+        rotate:  [0,  -15,                 -30],
+      }}
+      transition={{ duration: 0.85, ease: 'easeIn', times: [0, 0.45, 1] }}
+      onAnimationComplete={onComplete}
+    >
+      {emoji}
+    </motion.div>
+  )
+}
+
 // ── 飛ぶ鍵アニメーション ──────────────────────────────────────────────────────
 function FlyingKey({ from, to, onComplete }) {
   const dx = to.x - from.x
@@ -819,7 +852,7 @@ function CollectionScreen({ onBack, collection }) {
 }
 
 // ── ガチャガチャ画面 ──────────────────────────────────────────────────────────
-function GachaScreen({ onBack, coinCount, coinCounterRef, machineRef, onCoinTap, insertedCoins, onToyCollected }) {
+function GachaScreen({ onBack, coinCount, coinCounterRef, machineRef, onCoinTap, insertedCoins, onToyCollected, onToyTap, collectedCount }) {
   const [phase,         setPhase]        = useState('idle')  // 'idle' | 'capsule'
   const [showWhiteout,  setShowWhiteout] = useState(false)
   const [capsuleColor,  setCapsuleColor] = useState(null)
@@ -828,7 +861,9 @@ function GachaScreen({ onBack, coinCount, coinCounterRef, machineRef, onCoinTap,
   const [arrowRotation, setArrowRotation] = useState(0)
   const [isDragging,    setIsDragging]   = useState(false)
 
-  const arrowRef   = useRef(null)
+  const arrowRef       = useRef(null)
+  const toyWrapperRef  = useRef(null)
+  const toyboxBadgeRef = useRef(null)
   const swipeState = useRef({ active: false, cx: 0, cy: 0, lastAngle: 0, totalAngle: 0 })
 
   const triggerGacha = useCallback(() => {
@@ -931,7 +966,13 @@ function GachaScreen({ onBack, coinCount, coinCounterRef, machineRef, onCoinTap,
         )}
       </div>
 
-      <button className="btn-gacha-back" onClick={onBack}>◀ もどる</button>
+      <div className="gacha-screen__footer">
+        <button className="btn-gacha-back" onClick={onBack}>◀ もどる</button>
+        <div className="gacha-toybox-badge" ref={toyboxBadgeRef}>
+          🧸
+          {collectedCount > 0 && <span className="gacha-toybox-badge__count">{collectedCount}</span>}
+        </div>
+      </div>
 
       {/* ホワイトアウト */}
       <AnimatePresence>
@@ -978,6 +1019,17 @@ function GachaScreen({ onBack, coinCount, coinCounterRef, machineRef, onCoinTap,
                 playPop()
                 onToyCollected(toyEmoji)
               } else {
+                const toyEl   = toyWrapperRef.current
+                const badgeEl = toyboxBadgeRef.current
+                if (toyEl && badgeEl) {
+                  const fromRect = toyEl.getBoundingClientRect()
+                  const toRect   = badgeEl.getBoundingClientRect()
+                  onToyTap({
+                    emoji: toyEmoji,
+                    from: { x: fromRect.left + fromRect.width  / 2, y: fromRect.top  + fromRect.height / 2 },
+                    to:   { x: toRect.left   + toRect.width   / 2, y: toRect.top   + toRect.height  / 2 },
+                  })
+                }
                 setPhase('idle')
                 setCapsuleOpen(false)
               }
@@ -993,6 +1045,7 @@ function GachaScreen({ onBack, coinCount, coinCounterRef, machineRef, onCoinTap,
               <AnimatePresence>
                 {capsuleOpen && toyEmoji && (
                   <motion.div
+                    ref={toyWrapperRef}
                     key="toy"
                     style={{
                       position: 'absolute',
@@ -1326,6 +1379,7 @@ export default function ShadowPuzzle() {
   const pendingKeyRef  = useRef(false)
 
   const [flyingCoin,         setFlyingCoin]         = useState(null)
+  const [flyingToy,          setFlyingToy]          = useState(null)
   const [gachaInsertedCoins, setGachaInsertedCoins] = useState(0)
 
   useEffect(() => {
@@ -1468,6 +1522,10 @@ export default function ShadowPuzzle() {
     setClearCount(prev => prev + 1)
   }, [])
 
+  const handleToyTap = useCallback(({ emoji, from, to }) => {
+    setFlyingToy({ emoji, from, to })
+  }, [])
+
   const handleGachaCoinTap = useCallback(() => {
     if (flyingCoin || coinCount <= 0) return
     const fromEl = gachaCoinRef.current
@@ -1535,6 +1593,15 @@ export default function ShadowPuzzle() {
             }}
           />
         )}
+        {flyingToy && (
+          <FlyingToy
+            key="flying-toy"
+            emoji={flyingToy.emoji}
+            from={flyingToy.from}
+            to={flyingToy.to}
+            onComplete={() => setFlyingToy(null)}
+          />
+        )}
       </AnimatePresence>
 
       {screen === 'collection' ? (
@@ -1551,6 +1618,8 @@ export default function ShadowPuzzle() {
           onCoinTap={handleGachaCoinTap}
           insertedCoins={gachaInsertedCoins}
           onToyCollected={handleToyCollected}
+          onToyTap={handleToyTap}
+          collectedCount={toyCollection.length}
         />
       ) : screen === 'select' ? (
         <SelectScreen
