@@ -839,7 +839,7 @@ function CollectionScreen({ onBack, collection }) {
                     <motion.div
                       key={i}
                       className="toy-spotlight__sparkle"
-                      style={{ position: 'absolute', top: '50%', left: '50%' }}
+                      style={{ position: 'absolute', top: '50%', left: '50%', marginTop: '-1rem', marginLeft: '-1rem' }}
                       initial={{ x: 0, y: 0, scale: 0, opacity: 0 }}
                       animate={{
                         x:       Math.cos(angle) * 130,
