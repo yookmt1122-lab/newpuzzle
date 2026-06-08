@@ -423,12 +423,50 @@ function BalloonScore({ count }) {
   )
 }
 
-function CoinCounter({ count }) {
+const CoinCounter = forwardRef(function CoinCounter({ count, active }, ref) {
   return (
-    <div className="score-pill">
+    <div className={`score-pill${active ? ' score-pill--active' : ''}`} ref={ref}>
       <span className="score-pill__icon">🪙</span>
       <span className="score-pill__count score-pill__count--coin">{count}</span>
     </div>
+  )
+})
+
+// ── 飛ぶコインアニメーション ──────────────────────────────────────────────────
+function FlyingCoin({ from, to, onComplete }) {
+  const dx = to.x - from.x
+  const dy = to.y - from.y
+  const dist = Math.hypot(dx, dy)
+  const arcHeight = Math.min(dist * 0.45, 200)
+
+  return (
+    <motion.div
+      style={{
+        position: 'fixed',
+        left: from.x - 20,
+        top:  from.y - 20,
+        width: 40,
+        height: 40,
+        fontSize: '2rem',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 9999,
+        pointerEvents: 'none',
+      }}
+      initial={{ x: 0, y: 0, scale: 1, opacity: 1, rotate: 0 }}
+      animate={{
+        x:       [0, dx * 0.5,             dx],
+        y:       [0, dy * 0.5 - arcHeight, dy],
+        scale:   [1, 1.5,                  0.4],
+        opacity: [1, 1,                    0.2],
+        rotate:  [0, 360,                  720],
+      }}
+      transition={{ duration: 0.72, ease: 'easeIn', times: [0, 0.5, 1] }}
+      onAnimationComplete={onComplete}
+    >
+      🪙
+    </motion.div>
   )
 }
 
@@ -473,7 +511,7 @@ function FlyingKey({ from, to, onComplete }) {
 // ── 選択画面 ──────────────────────────────────────────────────────────────────
 function SelectScreen({ animalIndex, lockedStatus, keyCount, isAnimating,
                         difficulty, starsLit, keyEarnAnim, onCollect,
-                        onPrev, onNext, onStart, onUnlock, onDifficultyChange }) {
+                        onPrev, onNext, onStart, onUnlock, onDifficultyChange, onGacha, coinCount }) {
   const n = ANIMALS.length
   const prevIdx = (animalIndex - 1 + n) % n
   const nextIdx = (animalIndex + 1) % n
@@ -588,6 +626,44 @@ function SelectScreen({ animalIndex, lockedStatus, keyCount, isAnimating,
           スタート！🎮
         </button>
       )}
+
+      {coinCount >= 3 && (
+        <button className="btn-gacha" onClick={onGacha}>
+          🎰 ガチャガチャモード
+        </button>
+      )}
+    </div>
+  )
+}
+
+// ── ガチャガチャ画面 ──────────────────────────────────────────────────────────
+function GachaScreen({ onBack, coinCount, coinCounterRef, machineRef, onCoinTap }) {
+  return (
+    <div className="gacha-screen">
+      <div className="gacha-screen__bg-deco" aria-hidden="true">
+        {['🌟','⭐','✨','💫','🎊','🎉','🎈','🎀','🎁','🌈'].map((e, i) => (
+          <span key={i} className={`gacha-deco gacha-deco--${i}`}>{e}</span>
+        ))}
+      </div>
+
+      <div
+        className={`gacha-coin-wrapper${coinCount > 0 ? ' gacha-coin-wrapper--active' : ''}`}
+        onClick={coinCount > 0 ? onCoinTap : undefined}
+        role={coinCount > 0 ? 'button' : undefined}
+        aria-label={coinCount > 0 ? 'コインを投入する' : undefined}
+      >
+        <CoinCounter ref={coinCounterRef} count={coinCount} active={coinCount > 0} />
+      </div>
+
+      <h1 className="gacha-screen__title">ガチャガチャ！</h1>
+
+      <div className="gacha-screen__machine">
+        <img ref={machineRef} src="/gachagacha.png" alt="ガチャガチャ筐体" className="gacha-screen__img" />
+      </div>
+
+      <button className="btn-gacha-back" onClick={onBack}>
+        ◀ もどる
+      </button>
     </div>
   )
 }
@@ -894,8 +970,12 @@ export default function ShadowPuzzle() {
   const [balloonScore,  setBalloonScore] = useState(0)
   const [coinCount,     setCoinCount]    = useState(() => lsGet(LS.coinCount, 0))
 
-  const keyCounterRef = useRef(null)
-  const pendingKeyRef = useRef(false)
+  const keyCounterRef  = useRef(null)
+  const gachaCoinRef   = useRef(null)
+  const gachaMachineRef = useRef(null)
+  const pendingKeyRef  = useRef(false)
+
+  const [flyingCoin, setFlyingCoin] = useState(null)
 
   useEffect(() => {
     let started = false
@@ -1031,6 +1111,21 @@ export default function ShadowPuzzle() {
     setClearCount(prev => prev + 1)
   }, [])
 
+  const handleGachaCoinTap = useCallback(() => {
+    if (flyingCoin || coinCount <= 0) return
+    const fromEl = gachaCoinRef.current
+    const toEl   = gachaMachineRef.current
+    if (!fromEl || !toEl) return
+    const fromRect = fromEl.getBoundingClientRect()
+    const toRect   = toEl.getBoundingClientRect()
+    playKeyFly()
+    setCoinCount(c => Math.max(0, c - 1))
+    setFlyingCoin({
+      from: { x: fromRect.left + fromRect.width  / 2, y: fromRect.top  + fromRect.height / 2 },
+      to:   { x: toRect.left   + toRect.width   / 2, y: toRect.top    + toRect.height   / 2 },
+    })
+  }, [flyingCoin, coinCount])
+
   const handleStart = useCallback(() => {
     setBalloonScore(0)
     startBgm('play')
@@ -1072,9 +1167,25 @@ export default function ShadowPuzzle() {
             onComplete={applyFlyComplete}
           />
         )}
+        {flyingCoin && (
+          <FlyingCoin
+            key="flying-coin"
+            from={flyingCoin.from}
+            to={flyingCoin.to}
+            onComplete={() => setFlyingCoin(null)}
+          />
+        )}
       </AnimatePresence>
 
-      {screen === 'select' ? (
+      {screen === 'gacha' ? (
+        <GachaScreen
+          onBack={() => { startBgm('select'); setScreen('select') }}
+          coinCount={coinCount}
+          coinCounterRef={gachaCoinRef}
+          machineRef={gachaMachineRef}
+          onCoinTap={handleGachaCoinTap}
+        />
+      ) : screen === 'select' ? (
         <SelectScreen
           animalIndex={animalIndex}
           lockedStatus={lockedStatus}
@@ -1089,6 +1200,8 @@ export default function ShadowPuzzle() {
           onStart={handleStart}
           onUnlock={handleUnlock}
           onDifficultyChange={setDifficulty}
+          onGacha={() => { startBgm('gacha'); setScreen('gacha') }}
+          coinCount={coinCount}
         />
       ) : (
         <PlayScreen

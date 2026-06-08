@@ -166,20 +166,46 @@ const PLAY_MELODY = [
   [523, 2], [0, 2],
 ]
 
-function scheduleBgm(idx, melody, tempo) {
+// ガチャガチャBGM: 跳ねるカーニバル調
+const GACHA_TEMPO = 0.11
+const GACHA_MELODY = [
+  // フレーズ1: ワクワク上昇
+  [784, 0.5], [880, 0.5], [1047, 0.5], [1175, 0.5],
+  [1319, 1.5], [0, 0.5],
+  [1047, 0.5], [880, 0.5], [784, 0.5], [659, 0.5],
+  [523, 1.5], [0, 0.5],
+  // フレーズ2: 跳ねるリズム
+  [880, 0.5], [880, 0.25], [1047, 0.25], [880, 0.5], [784, 0.5],
+  [659, 1], [0, 0.5],
+  [784, 0.5], [784, 0.25], [880, 0.25], [784, 0.5], [659, 0.5],
+  [523, 1.5], [0, 0.5],
+  // フレーズ3: 盛り上がり
+  [523, 0.5], [659, 0.5], [784, 0.5], [880, 0.5],
+  [1047, 0.5], [1175, 0.5], [1319, 0.5], [1047, 0.5],
+  [880, 0.5], [784, 0.5], [659, 0.5], [523, 0.5],
+  [523, 2], [0, 1],
+]
+
+function scheduleBgm(idx, melody, tempo, wave) {
   if (!bgmPlaying) return
   const [freq, beats] = melody[idx % melody.length]
-  if (freq > 0 && !muted) tone(freq, beats * tempo * 0.82, 0, 0.15, 'triangle')
-  bgmTid = setTimeout(() => scheduleBgm((idx + 1) % melody.length, melody, tempo), beats * tempo * 1000)
+  if (freq > 0 && !muted) tone(freq, beats * tempo * 0.78, 0, 0.15, wave)
+  bgmTid = setTimeout(() => scheduleBgm((idx + 1) % melody.length, melody, tempo, wave), beats * tempo * 1000)
 }
 
 export function startBgm(type = 'select') {
   stopBgm()
   bgmPlaying = true
-  const melody = type === 'play' ? PLAY_MELODY : SELECT_MELODY
-  const tempo  = type === 'play' ? PLAY_TEMPO  : SELECT_TEMPO
+  let melody, tempo, wave
+  if (type === 'play') {
+    melody = PLAY_MELODY;  tempo = PLAY_TEMPO;  wave = 'triangle'
+  } else if (type === 'gacha') {
+    melody = GACHA_MELODY; tempo = GACHA_TEMPO; wave = 'square'
+  } else {
+    melody = SELECT_MELODY; tempo = SELECT_TEMPO; wave = 'triangle'
+  }
   withResume(() => {
-    if (bgmPlaying) scheduleBgm(0, melody, tempo)
+    if (bgmPlaying) scheduleBgm(0, melody, tempo, wave)
   })
 }
 
