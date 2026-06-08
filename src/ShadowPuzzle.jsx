@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import './ShadowPuzzle.css'
 import {
   playSnap, playComplete, playKeyEarned, playKeyFly, playUnlock, playClick,
-  playBuzz, startBgm, stopBgm, setMuted, unlockAudio,
+  playBuzz, playPop, startBgm, stopBgm, setMuted, unlockAudio,
 } from './sounds.js'
 
 const ANIMALS = [
@@ -236,6 +236,8 @@ function Balloons({ active }) {
     canvas.height = window.innerHeight
 
     const count = 9
+    let frame = 0
+
     const balloons = Array.from({ length: count }, (_, i) => {
       const slot = canvas.width / count
       return {
@@ -248,10 +250,32 @@ function Balloons({ active }) {
         amplitude: 18 + Math.random() * 18,
         delay:     i * 6 + Math.random() * 10,
         opacity:   1,
+        currentX:  0,   // 毎フレーム更新されるゆれ後のX座標
+        popped:    false,
+        popProg:   0,
       }
     })
 
-    let frame = 0
+    // document レベルで検出（canvas は pointerEvents:none のままにする）
+    const handleTap = (e) => {
+      const pt = e.touches ? e.touches[0] : e
+      const cx = pt.clientX
+      const cy = pt.clientY
+      for (const b of balloons) {
+        if (b.popped || b.opacity <= 0 || frame < b.delay) continue
+        // 楕円の内外判定: (dx/rx)^2 + (dy/ry)^2 <= 1
+        const dx = (cx - b.currentX) / (b.r * 0.78)
+        const dy = (cy - b.y)        / b.r
+        if (dx * dx + dy * dy <= 1) {
+          b.popped = true
+          playPop()
+          break
+        }
+      }
+    }
+    document.addEventListener('touchstart', handleTap, { passive: true })
+    document.addEventListener('click',      handleTap)
+
     let rafId
     const fadeStart = 220
 
@@ -261,16 +285,49 @@ function Balloons({ active }) {
       let alive = false
 
       for (const b of balloons) {
+        // ── ポップ済みのバルーン：弾けるアニメーション ──
+        if (b.popped) {
+          b.popProg += 0.07
+          if (b.popProg < 1) {
+            alive = true
+            ctx.save()
+            ctx.globalAlpha = Math.max(0, 1 - b.popProg * 1.4)
+            // 広がるリング
+            ctx.beginPath()
+            ctx.arc(b.currentX, b.y, b.r * (1 + b.popProg * 2.5), 0, Math.PI * 2)
+            ctx.strokeStyle = b.color
+            ctx.lineWidth   = b.r * 0.35 * (1 - b.popProg)
+            ctx.stroke()
+            // 放射状の粒
+            for (let i = 0; i < 8; i++) {
+              const angle = (i / 8) * Math.PI * 2
+              const dist  = b.r * 2.8 * b.popProg
+              ctx.beginPath()
+              ctx.arc(
+                b.currentX + Math.cos(angle) * dist,
+                b.y        + Math.sin(angle) * dist,
+                5 * (1 - b.popProg),
+                0, Math.PI * 2
+              )
+              ctx.fillStyle = b.color
+              ctx.fill()
+            }
+            ctx.restore()
+          }
+          continue
+        }
+
+        // ── 通常のバルーン ──
         if (frame < b.delay) { alive = true; continue }
         b.y -= b.speed
-        const swayX = b.x + Math.sin(frame * 0.025 + b.phase) * b.amplitude
+        b.currentX = b.x + Math.sin(frame * 0.025 + b.phase) * b.amplitude
         if (frame > fadeStart) b.opacity = Math.max(0, b.opacity - 0.012)
 
         if (b.opacity > 0 && b.y > -b.r * 2 - 100) {
           alive = true
           ctx.save()
           ctx.globalAlpha = b.opacity
-          drawBalloon(ctx, swayX, b.y, b.r, b.color)
+          drawBalloon(ctx, b.currentX, b.y, b.r, b.color)
           ctx.restore()
         }
       }
@@ -279,7 +336,11 @@ function Balloons({ active }) {
     }
 
     rafId = requestAnimationFrame(animate)
-    return () => cancelAnimationFrame(rafId)
+    return () => {
+      cancelAnimationFrame(rafId)
+      document.removeEventListener('touchstart', handleTap)
+      document.removeEventListener('click',      handleTap)
+    }
   }, [active])
 
   if (!active) return null

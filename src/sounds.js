@@ -107,6 +107,30 @@ export function playClick() {
   withResume(() => tone(500, 0.06, 0, 0.15))
 }
 
+export function playPop() {
+  withResume(() => {
+    const c = getCtx()
+    const len = Math.floor(c.sampleRate * 0.07)
+    const buf = c.createBuffer(1, len, c.sampleRate)
+    const d = buf.getChannelData(0)
+    for (let i = 0; i < len; i++) {
+      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 1.5)
+    }
+    const src  = c.createBufferSource()
+    src.buffer = buf
+    const filt = c.createBiquadFilter()
+    filt.type  = 'bandpass'
+    filt.frequency.value = 650
+    filt.Q.value = 0.7
+    const g = c.createGain()
+    g.gain.value = 0.9
+    src.connect(filt)
+    filt.connect(g)
+    g.connect(c.destination)
+    src.start()
+  })
+}
+
 export function playBuzz() {
   withResume(() => {
     tone(180, 0.18, 0,    0.45, 'sawtooth')
