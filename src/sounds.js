@@ -1,26 +1,35 @@
 let _ctx = null
-const ctx = () => {
+
+function getCtx() {
   if (!_ctx) _ctx = new (window.AudioContext || window.webkitAudioContext)()
   return _ctx
 }
 
-// iOS Safari requires: create context + play silent buffer within a user gesture
+// iOS はバックグラウンド復帰時に context を suspend する。全 touch で再開する
+window.addEventListener('touchstart', () => {
+  if (_ctx && _ctx.state !== 'running') _ctx.resume()
+}, { passive: true, capture: true })
+
+// ユーザーの直接タップハンドラ内から呼ぶこと（iOS 必須）
 export function unlockAudio() {
-  const c = ctx()
-  if (c.state === 'suspended') {
-    const buf = c.createBuffer(1, 1, c.sampleRate)
-    const src = c.createBufferSource()
-    src.buffer = buf
-    src.connect(c.destination)
-    src.start(0)
-    c.resume()
-  }
+  const c = getCtx()
+  // 無音バッファを再生して iOS の audio session を確立する
+  const buf = c.createBuffer(1, 1, c.sampleRate)
+  const src = c.createBufferSource()
+  src.buffer = buf
+  src.connect(c.destination)
+  src.start(0)
+  c.resume()
 }
 
-const resume = () => {
-  const c = ctx()
-  if (c.state !== 'running') return c.resume()
-  return Promise.resolve()
+// context が running なら同期実行、suspended なら resume 後に実行
+function withResume(fn) {
+  const c = getCtx()
+  if (c.state === 'running') {
+    fn()
+  } else {
+    c.resume().then(fn)
+  }
 }
 
 let muted = false
@@ -28,7 +37,7 @@ export const setMuted = (v) => { muted = v }
 
 function tone(freq, dur, delay = 0, vol = 0.3, type = 'triangle') {
   if (muted) return
-  const c = ctx()
+  const c = getCtx()
   const o = c.createOscillator()
   const g = c.createGain()
   o.connect(g)
@@ -41,10 +50,6 @@ function tone(freq, dur, delay = 0, vol = 0.3, type = 'triangle') {
   g.gain.exponentialRampToValueAtTime(0.001, t + dur)
   o.start(t)
   o.stop(t + dur + 0.05)
-}
-
-function withResume(fn) {
-  resume().then(fn)
 }
 
 export function playSnap() {
@@ -69,7 +74,7 @@ export function playKeyEarned() {
 export function playKeyFly() {
   if (muted) return
   withResume(() => {
-    const c = ctx()
+    const c = getCtx()
     const buf = c.createBuffer(1, c.sampleRate * 0.6, c.sampleRate)
     const d = buf.getChannelData(0)
     for (let i = 0; i < d.length; i++) {
@@ -149,7 +154,7 @@ export function startBgm(type = 'select') {
   bgmPlaying = true
   const melody = type === 'play' ? PLAY_MELODY : SELECT_MELODY
   const tempo  = type === 'play' ? PLAY_TEMPO  : SELECT_TEMPO
-  resume().then(() => {
+  withResume(() => {
     if (bgmPlaying) scheduleBgm(0, melody, tempo)
   })
 }

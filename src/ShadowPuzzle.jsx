@@ -578,27 +578,15 @@ export default function ShadowPuzzle() {
   const [flyKey,       setFlyKey]       = useState(null)
   const [soundOn,      setSoundOn]      = useState(true)
   const [keyEarnAnim,  setKeyEarnAnim]  = useState(null)
+  const [audioReady,   setAudioReady]   = useState(false)
 
   const keyCounterRef = useRef(null)
   const pendingKeyRef = useRef(false)
 
-  useEffect(() => {
-    let started = false
-    const start = () => {
-      if (started) return
-      started = true
-      unlockAudio()
-      startBgm('select')
-      window.removeEventListener('touchstart', start)
-      window.removeEventListener('pointerdown', start)
-    }
-    // touchstart fires first on iOS and is required for AudioContext unlock
-    window.addEventListener('touchstart', start, { passive: true })
-    window.addEventListener('pointerdown', start)
-    return () => {
-      window.removeEventListener('touchstart', start)
-      window.removeEventListener('pointerdown', start)
-    }
+  const handleAudioStart = useCallback(() => {
+    unlockAudio()
+    startBgm('select')
+    setAudioReady(true)
   }, [])
 
   const toggleSound = useCallback(() => {
@@ -718,6 +706,15 @@ export default function ShadowPuzzle() {
 
   return (
     <>
+      {!audioReady && (
+        <div className="audio-start-overlay" onClick={handleAudioStart}>
+          <div className="audio-start-overlay__box">
+            <span className="audio-start-overlay__icon">🎵</span>
+            <p className="audio-start-overlay__text">タップしてはじめる</p>
+          </div>
+        </div>
+      )}
+
       <KeyCounter ref={keyCounterRef} count={keyCount} />
 
       <button className="btn-debug-reset" onClick={handleDebugReset} aria-label="データをリセット">
