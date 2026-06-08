@@ -188,6 +188,109 @@ function Confetti({ active }) {
   )
 }
 
+// ── バルーン ──────────────────────────────────────────────────────────────────
+const BALLOON_COLORS = [
+  '#FF6B6B', '#FFE66D', '#4ECDC4', '#FF9FF3', '#A29BFE',
+  '#FD79A8', '#74B9FF', '#FDCB6E', '#55EFC4', '#FF7675',
+]
+
+function drawBalloon(ctx, x, y, r, color) {
+  // 本体
+  ctx.beginPath()
+  ctx.ellipse(x, y, r * 0.78, r, 0, 0, Math.PI * 2)
+  ctx.fillStyle = color
+  ctx.fill()
+
+  // ハイライト
+  ctx.beginPath()
+  ctx.ellipse(x - r * 0.22, y - r * 0.28, r * 0.22, r * 0.3, -0.4, 0, Math.PI * 2)
+  ctx.fillStyle = 'rgba(255,255,255,0.38)'
+  ctx.fill()
+
+  // 結び目
+  const knotY = y + r
+  ctx.beginPath()
+  ctx.moveTo(x - 4, knotY)
+  ctx.quadraticCurveTo(x, knotY + 8, x + 4, knotY)
+  ctx.fillStyle = color
+  ctx.fill()
+
+  // ひも（ゆらゆら曲線）
+  ctx.beginPath()
+  ctx.moveTo(x, knotY + 8)
+  ctx.bezierCurveTo(x + 12, knotY + 30, x - 12, knotY + 55, x + 8, knotY + 80)
+  ctx.strokeStyle = 'rgba(0,0,0,0.22)'
+  ctx.lineWidth = 1.2
+  ctx.stroke()
+}
+
+function Balloons({ active }) {
+  const canvasRef = useRef(null)
+
+  useEffect(() => {
+    if (!active) return
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    canvas.width  = window.innerWidth
+    canvas.height = window.innerHeight
+
+    const count = 9
+    const balloons = Array.from({ length: count }, (_, i) => {
+      const slot = canvas.width / count
+      return {
+        x:         slot * i + slot * 0.5 + (Math.random() - 0.5) * slot * 0.6,
+        y:         canvas.height + 80 + Math.random() * 80,
+        r:         30 + Math.random() * 18,
+        color:     BALLOON_COLORS[i % BALLOON_COLORS.length],
+        speed:     1.4 + Math.random() * 1.1,
+        phase:     Math.random() * Math.PI * 2,
+        amplitude: 18 + Math.random() * 18,
+        delay:     i * 6 + Math.random() * 10,
+        opacity:   1,
+      }
+    })
+
+    let frame = 0
+    let rafId
+    const fadeStart = 220
+
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      frame++
+      let alive = false
+
+      for (const b of balloons) {
+        if (frame < b.delay) { alive = true; continue }
+        b.y -= b.speed
+        const swayX = b.x + Math.sin(frame * 0.025 + b.phase) * b.amplitude
+        if (frame > fadeStart) b.opacity = Math.max(0, b.opacity - 0.012)
+
+        if (b.opacity > 0 && b.y > -b.r * 2 - 100) {
+          alive = true
+          ctx.save()
+          ctx.globalAlpha = b.opacity
+          drawBalloon(ctx, swayX, b.y, b.r, b.color)
+          ctx.restore()
+        }
+      }
+
+      if (alive) rafId = requestAnimationFrame(animate)
+    }
+
+    rafId = requestAnimationFrame(animate)
+    return () => cancelAnimationFrame(rafId)
+  }, [active])
+
+  if (!active) return null
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 499 }}
+    />
+  )
+}
+
 // ── 星プログレス ──────────────────────────────────────────────────────────────
 function StarProgress({ starsLit, keyEarnAnim, onCollect }) {
   const count = keyEarnAnim === 'stars' ? 3 : starsLit
@@ -547,6 +650,7 @@ function PlayScreen({ animal, clearCount, difficulty, pieceSize, onBack, onCompl
   return (
     <main className="puzzle">
       <Confetti active={allPlaced} />
+      <Balloons active={allPlaced} />
       <div className="play__header">
         <button className="btn-back" onClick={onBack}>◀ もどる</button>
         <div className="play__animal">
