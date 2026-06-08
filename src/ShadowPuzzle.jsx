@@ -996,7 +996,8 @@ function GachaScreen({ onBack, coinCount, coinCounterRef, machineRef, onCoinTap,
                     key="toy"
                     style={{
                       position: 'absolute',
-                      top: '25%', left: '50%',
+                      top: '5%', left: '50%',
+                      transform: 'translateX(-50%)',
                       zIndex: 20,
                       pointerEvents: 'none',
                     }}
