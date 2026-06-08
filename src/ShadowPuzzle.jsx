@@ -413,12 +413,21 @@ const KeyCounter = forwardRef(function KeyCounter({ count }, ref) {
   )
 })
 
-// ── 風船スコアカウンター ──────────────────────────────────────────────────────
+// ── 風船スコア＆コインカウンター ──────────────────────────────────────────────
 function BalloonScore({ count }) {
   return (
-    <div className="balloon-score">
-      <span className="balloon-score__icon">🎈</span>
-      <span className="balloon-score__count">{count}</span>
+    <div className="score-pill">
+      <span className="score-pill__icon">🎈</span>
+      <span className="score-pill__count score-pill__count--balloon">{count}</span>
+    </div>
+  )
+}
+
+function CoinCounter({ count }) {
+  return (
+    <div className="score-pill">
+      <span className="score-pill__icon">🪙</span>
+      <span className="score-pill__count score-pill__count--coin">{count}</span>
     </div>
   )
 }
@@ -848,6 +857,7 @@ const LS = {
   keyCount:    'puzzle_keyCount',
   locked:      'puzzle_lockedStatus',
   clearCount:  'puzzle_clearCount',
+  coinCount:   'puzzle_coinCount',
 }
 
 function lsGet(key, fallback) {
@@ -882,6 +892,7 @@ export default function ShadowPuzzle() {
   const [soundOn,       setSoundOn]      = useState(true)
   const [keyEarnAnim,   setKeyEarnAnim]  = useState(null)
   const [balloonScore,  setBalloonScore] = useState(0)
+  const [coinCount,     setCoinCount]    = useState(() => lsGet(LS.coinCount, 0))
 
   const keyCounterRef = useRef(null)
   const pendingKeyRef = useRef(false)
@@ -917,6 +928,15 @@ export default function ShadowPuzzle() {
   useEffect(() => { localStorage.setItem(LS.keyCount,   JSON.stringify(keyCount))     }, [keyCount])
   useEffect(() => { localStorage.setItem(LS.locked,     JSON.stringify(lockedStatus)) }, [lockedStatus])
   useEffect(() => { localStorage.setItem(LS.clearCount, JSON.stringify(clearCount))   }, [clearCount])
+  useEffect(() => { localStorage.setItem(LS.coinCount,  JSON.stringify(coinCount))    }, [coinCount])
+
+  // 10点たまったら自動でコイン1枚に交換
+  useEffect(() => {
+    if (balloonScore >= 10) {
+      setCoinCount(c => c + 1)
+      setBalloonScore(s => s - 10)
+    }
+  }, [balloonScore])
 
   useEffect(() => {
     if (clearCount > 0 && clearCount % 3 === 0) {
@@ -937,6 +957,8 @@ export default function ShadowPuzzle() {
     setKeyCount(0)
     setLockedStatus(INITIAL_LOCKED)
     setClearCount(0)
+    setCoinCount(0)
+    setBalloonScore(0)
     setScreen('select')
     setAnimalIndex(0)
   }, [])
@@ -1024,7 +1046,12 @@ export default function ShadowPuzzle() {
   return (
     <>
       <KeyCounter ref={keyCounterRef} count={keyCount} />
-      {screen === 'play' && <BalloonScore count={balloonScore} />}
+      {screen === 'play' && (
+        <div className="score-group">
+          <BalloonScore count={balloonScore} />
+          <CoinCounter  count={coinCount} />
+        </div>
+      )}
 
       <button className="btn-debug-reset" onClick={handleDebugReset} aria-label="データをリセット">
         🗑

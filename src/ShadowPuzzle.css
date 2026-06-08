@@ -80,12 +80,18 @@
   text-align: center;
 }
 
-/* ── 風船スコアカウンター ───────────────────────────────────────────────────── */
-.balloon-score {
+/* ── 風船スコア＆コイングループ ─────────────────────────────────────────────── */
+.score-group {
   position: fixed;
   top: 16px;
   right: 130px;
   z-index: 1000;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.score-pill {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -96,18 +102,20 @@
   backdrop-filter: blur(6px);
 }
 
-.balloon-score__icon {
+.score-pill__icon {
   font-size: 1.3rem;
   line-height: 1;
 }
 
-.balloon-score__count {
+.score-pill__count {
   font-size: 1.25rem;
   font-weight: 900;
-  color: #FF6B6B;
   min-width: 1.2ch;
   text-align: center;
 }
+
+.score-pill__count--balloon { color: #FF6B6B; }
+.score-pill__count--coin    { color: #F4A000; }
 
 /* ── 星プログレス ─────────────────────────────────────────────────────────── */
 .star-progress {
