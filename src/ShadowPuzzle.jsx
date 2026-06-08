@@ -881,7 +881,7 @@ function CollectionScreen({ onBack, collection }) {
 }
 
 // ── ガチャガチャ画面 ──────────────────────────────────────────────────────────
-function GachaScreen({ onBack, onCollection, coinCount, coinCounterRef, machineRef, onCoinTap, insertedCoins, onToyCollected, onToyTap, collectedCount }) {
+function GachaScreen({ onBack, onCollection, coinCount, coinCounterRef, machineRef, onCoinTap, insertedCoins, onGachaTriggered, onToyCollected, onToyTap, collectedCount }) {
   const [phase,         setPhase]        = useState('idle')  // 'idle' | 'capsule'
   const [showWhiteout,  setShowWhiteout] = useState(false)
   const [capsuleColor,  setCapsuleColor] = useState(null)
@@ -902,8 +902,9 @@ function GachaScreen({ onBack, onCollection, coinCount, coinCounterRef, machineR
     setToyEmoji(toy)
     setCapsuleOpen(false)
     setShowWhiteout(true)
+    onGachaTriggered()
     setTimeout(() => setPhase('capsule'), 570)
-  }, [])
+  }, [onGachaTriggered])
 
   const onSwipeStart = useCallback((e) => {
     if (phase !== 'idle' || insertedCoins < 3) return
@@ -1646,6 +1647,7 @@ export default function ShadowPuzzle() {
           machineRef={gachaMachineRef}
           onCoinTap={handleGachaCoinTap}
           insertedCoins={gachaInsertedCoins}
+          onGachaTriggered={() => setGachaInsertedCoins(0)}
           onToyCollected={handleToyCollected}
           onToyTap={handleToyTap}
           collectedCount={toyCollection.length}
