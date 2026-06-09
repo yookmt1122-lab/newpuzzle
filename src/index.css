@@ -10,8 +10,8 @@ html {
 
 
 body {
-  font-family: 'Rounded Mplus 1c', 'M PLUS Rounded 1c', 'Hiragino Maru Gothic Pro',
-               'Segoe UI', Meiryo, sans-serif;
+  font-family: 'Zen Maru Gothic', 'Hiragino Maru Gothic Pro', 'M PLUS Rounded 1c', sans-serif;
+  font-weight: 500;
   background:
     radial-gradient(circle at 15% 25%, #FFD6E8 0%, transparent 40%),
     radial-gradient(circle at 85% 10%, #C8F0FF 0%, transparent 40%),

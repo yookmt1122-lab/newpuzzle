@@ -182,13 +182,14 @@
 
 .exchange-modal__desc {
   font-size: 1.1rem;
-  font-weight: 700;
+  font-weight: 500;
   margin: 0 0 4px;
   color: #555;
 }
 
 .exchange-modal__rate {
   font-size: 1rem;
+  font-weight: 400;
   color: #888;
   margin: 0 0 8px;
 }
@@ -211,7 +212,7 @@
   border-radius: 999px;
   border: none;
   font-size: 1rem;
-  font-weight: 900;
+  font-weight: 700;
   cursor: pointer;
   transition: transform 0.1s, box-shadow 0.1s;
 }
@@ -367,7 +368,7 @@
 
 .select__subtitle {
   font-size: 1.15rem;
-  font-weight: 800;
+  font-weight: 700;
   color: #FF8B47;
   letter-spacing: 0.06em;
 }
@@ -649,7 +650,7 @@
   background: rgba(255, 255, 255, 0.7);
   color: #FF6B9D;
   font-size: 0.95rem;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
   box-shadow: 0 4px 0 #E8D5C0, 0 6px 16px rgba(0,0,0,0.08);
   transition: transform 0.1s, box-shadow 0.1s;
@@ -672,7 +673,7 @@
 
 .play__animal-name {
   font-size: 0.95rem;
-  font-weight: 800;
+  font-weight: 500;
   color: #FF6B9D;
   letter-spacing: 0.04em;
 }
@@ -699,14 +700,14 @@
 
 .stage__label {
   font-size: 1.05rem;
-  font-weight: 800;
+  font-weight: 700;
   color: #FF8B47;
   letter-spacing: 0.06em;
 }
 
 .tray__label {
   font-size: 1.05rem;
-  font-weight: 800;
+  font-weight: 700;
   color: #4ECDC4;
   letter-spacing: 0.06em;
 }
@@ -846,7 +847,7 @@
   background: #fff;
   color: #FF9F47;
   font-size: 0.95rem;
-  font-weight: 900;
+  font-weight: 700;
   letter-spacing: 0.05em;
   cursor: pointer;
   box-shadow: 0 4px 0 #E8D5C0;
@@ -935,7 +936,7 @@
 /* ── アニメーション ───────────────────────────────────────────────────────── */
 .puzzle__complete-key {
   font-size: 1rem;
-  font-weight: 800;
+  font-weight: 700;
   opacity: 0.92;
   letter-spacing: 0.04em;
 }
@@ -1093,7 +1094,7 @@
 
 .gacha-turn-arrow__label {
   font-size: 1rem;
-  font-weight: 900;
+  font-weight: 700;
   color: #FF6B9D;
   letter-spacing: 0.05em;
   line-height: 1;
@@ -1143,7 +1144,7 @@
   background: #fff;
   color: #FF6B9D;
   font-size: 1.1rem;
-  font-weight: 900;
+  font-weight: 700;
   letter-spacing: 0.05em;
   cursor: pointer;
   box-shadow: 0 4px 0 #E8D5C0, 0 6px 20px rgba(0,0,0,0.1);
@@ -1251,7 +1252,7 @@
 
 .collection-empty__text {
   font-size: 1.1rem;
-  font-weight: 700;
+  font-weight: 400;
   color: #A08080;
 }
 
