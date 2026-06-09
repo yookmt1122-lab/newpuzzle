@@ -1418,7 +1418,7 @@ function PlayScreen({ animal, clearCount, difficulty, pieceSize, onBack, onCompl
         )}
       </section>
 
-      <section className="puzzle__tray">
+      {!allPlaced && <section className="puzzle__tray">
 
         <div className="tray__pieces">
           {trayOrder.map((pieceId) => {
@@ -1439,7 +1439,7 @@ function PlayScreen({ animal, clearCount, difficulty, pieceSize, onBack, onCompl
             )
           })}
         </div>
-      </section>
+      </section>}
 
       {floatingPiece}
     </main>
