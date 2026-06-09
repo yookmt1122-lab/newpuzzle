@@ -931,7 +931,7 @@ function CollectionScreen({ onBack, collection }) {
 }
 
 // ── ガチャガチャ画面 ──────────────────────────────────────────────────────────
-function GachaScreen({ onBack, coinCount, coinCounterRef, machineRef, onCoinTap, insertedCoins, onGachaTriggered, onToyCollected, onToyTap, toyboxRef }) {
+function GachaScreen({ onBack, coinCount, coinCounterRef, onCoinTap, insertedCoins, onGachaTriggered, onToyCollected, onToyTap, toyboxRef, coinFlying }) {
   const [phase,         setPhase]        = useState('idle')  // 'idle' | 'capsule'
   const [showWhiteout,  setShowWhiteout] = useState(false)
   const [capsuleColor,  setCapsuleColor] = useState(null)
@@ -942,6 +942,7 @@ function GachaScreen({ onBack, coinCount, coinCounterRef, machineRef, onCoinTap,
 
   const arrowRef      = useRef(null)
   const toyWrapperRef = useRef(null)
+  const slotRefs      = [useRef(null), useRef(null), useRef(null)]
   const swipeState = useRef({ active: false, cx: 0, cy: 0, lastAngle: 0, totalAngle: 0 })
 
   const triggerGacha = useCallback(() => {
@@ -1017,16 +1018,36 @@ function GachaScreen({ onBack, coinCount, coinCounterRef, machineRef, onCoinTap,
         ))}
       </div>
 
-      <div
-        className={`gacha-coin-wrapper${coinCount > 0 && phase === 'idle' ? ' gacha-coin-wrapper--active' : ''}`}
-        onClick={coinCount > 0 && phase === 'idle' ? onCoinTap : undefined}
-        role={coinCount > 0 && phase === 'idle' ? 'button' : undefined}
-        aria-label={coinCount > 0 && phase === 'idle' ? 'コインを投入する' : undefined}
-      >
-        <CoinCounter ref={coinCounterRef} count={coinCount} active={coinCount > 0 && phase === 'idle'} />
+      <div className="gacha-coin-wrapper">
+        <CoinCounter ref={coinCounterRef} count={coinCount} />
       </div>
 
       <h1 className="gacha-screen__title">ガチャガチャ！</h1>
+
+      {phase === 'idle' && insertedCoins < 3 && (
+        <div className="gacha-coin-slots">
+          {[0, 1, 2].map(i => {
+            const filled  = i < insertedCoins
+            const isNext  = i === insertedCoins
+            const canTap  = isNext && coinCount > 0 && !coinFlying
+            return (
+              <div
+                key={i}
+                ref={slotRefs[i]}
+                className={`gacha-coin-slot${filled ? ' gacha-coin-slot--filled' : isNext ? ' gacha-coin-slot--next' : ' gacha-coin-slot--empty'}`}
+                onClick={canTap ? () => {
+                  const rect = slotRefs[i].current?.getBoundingClientRect()
+                  if (rect) onCoinTap(rect)
+                } : undefined}
+                role={canTap ? 'button' : undefined}
+                aria-label={canTap ? 'コインを投入する' : undefined}
+              >
+                🪙
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       <div className="gacha-screen__machine">
         <img ref={machineRef} src="/gachagacha.png" alt="ガチャガチャ筐体" className="gacha-screen__img" draggable={false} />
@@ -1630,18 +1651,16 @@ export default function ShadowPuzzle() {
     setFlyingToy({ emoji, from, to })
   }, [])
 
-  const handleGachaCoinTap = useCallback(() => {
+  const handleGachaCoinTap = useCallback((toRect) => {
     if (flyingCoin || coinCount <= 0) return
     const fromEl = gachaCoinRef.current
-    const toEl   = gachaMachineRef.current
-    if (!fromEl || !toEl) return
+    if (!fromEl || !toRect) return
     const fromRect = fromEl.getBoundingClientRect()
-    const toRect   = toEl.getBoundingClientRect()
     playKeyFly()
     setCoinCount(c => Math.max(0, c - 1))
     setFlyingCoin({
       from: { x: fromRect.left + fromRect.width  / 2, y: fromRect.top  + fromRect.height / 2 },
-      to:   { x: toRect.left   + toRect.width   / 2, y: toRect.top    + toRect.height   / 2 },
+      to:   { x: toRect.left   + toRect.width    / 2, y: toRect.top    + toRect.height   / 2 },
     })
   }, [flyingCoin, coinCount])
 
@@ -1742,13 +1761,13 @@ export default function ShadowPuzzle() {
           onBack={() => { setScreen('select'); setGachaInsertedCoins(0) }}
           coinCount={coinCount}
           coinCounterRef={gachaCoinRef}
-          machineRef={gachaMachineRef}
           onCoinTap={handleGachaCoinTap}
           insertedCoins={gachaInsertedCoins}
           onGachaTriggered={() => setGachaInsertedCoins(0)}
           onToyCollected={handleToyCollected}
           onToyTap={handleToyTap}
           toyboxRef={toyboxBtnRef}
+          coinFlying={!!flyingCoin}
         />
       ) : screen === 'select' ? (
         <SelectScreen
