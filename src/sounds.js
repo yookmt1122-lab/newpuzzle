@@ -141,6 +141,7 @@ export function playBuzz() {
 // ── BGM ──────────────────────────────────────────────────────────────────────
 let bgmPlaying = false
 let bgmTid = null
+let bgmGen = 0
 
 const SELECT_TEMPO = 0.27
 const SELECT_MELODY = [
@@ -203,15 +204,17 @@ const GACHA_MELODY = [
   [523, 2], [0, 1],
 ]
 
-function scheduleBgm(idx, melody, tempo, wave) {
-  if (!bgmPlaying) return
+function scheduleBgm(idx, melody, tempo, wave, gen) {
+  if (!bgmPlaying || bgmGen !== gen) return
   const [freq, beats] = melody[idx % melody.length]
   if (freq > 0 && !muted) tone(freq, beats * tempo * 0.78, 0, 0.15, wave)
-  bgmTid = setTimeout(() => scheduleBgm((idx + 1) % melody.length, melody, tempo, wave), beats * tempo * 1000)
+  bgmTid = setTimeout(() => scheduleBgm((idx + 1) % melody.length, melody, tempo, wave, gen), beats * tempo * 1000)
 }
 
 export function startBgm(type = 'select') {
   stopBgm()
+  bgmGen++
+  const gen = bgmGen
   bgmPlaying = true
   let melody, tempo, wave
   if (type === 'play') {
@@ -224,7 +227,7 @@ export function startBgm(type = 'select') {
     melody = SELECT_MELODY;      tempo = SELECT_TEMPO;      wave = 'triangle'
   }
   withResume(() => {
-    if (bgmPlaying) scheduleBgm(0, melody, tempo, wave)
+    if (bgmPlaying && bgmGen === gen) scheduleBgm(0, melody, tempo, wave, gen)
   })
 }
 

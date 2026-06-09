@@ -425,23 +425,24 @@
 /* ── 難易度選択 ───────────────────────────────────────────────────────────── */
 .difficulty-selector {
   display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
+  gap: 6px;
+  flex-wrap: nowrap;
   justify-content: center;
-  max-width: 420px;
+  width: 100%;
 }
 
 .btn-difficulty {
-  padding: 10px 22px;
+  padding: 10px 14px;
   border-radius: 999px;
   border: 3px solid #FBBDCC;
   background: #fff;
   color: #FF6B9D;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   font-weight: 900;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
   cursor: pointer;
   transition: all 0.15s;
+  white-space: nowrap;
 }
 
 .btn-difficulty:hover {
@@ -746,8 +747,8 @@
   }
 
   .btn-difficulty {
-    padding: 8px 12px;
-    font-size: 0.78rem;
+    padding: 7px 8px;
+    font-size: 0.72rem;
   }
 
   .btn-start {
@@ -979,12 +980,11 @@
   box-shadow: 0 1px 0 #E8D5C0, 0 2px 8px rgba(0,0,0,0.08);
 }
 
-/* ── おもちゃばこボタン（選択画面） ─────────────────────────────────────────── */
+/* ── おもちゃばこボタン ──────────────────────────────────────────────────────── */
 .btn-collection {
   position: relative;
-  margin-top: 14px;
-  padding: 10px 28px;
-  font-size: 1rem;
+  padding: 8px 18px;
+  font-size: 0.9rem;
   font-weight: 700;
   border: none;
   border-radius: 999px;

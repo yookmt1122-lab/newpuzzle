@@ -40,7 +40,7 @@ const ANIMALS = [
   { emoji: '🐉', label: 'ドラゴン' },
   { emoji: '🐊', label: 'ワニ' },
   { emoji: '🦩', label: 'フラミンゴ' },
-  { emoji: '🦦', label: 'カワウソ' },
+  { emoji: '🦦', label: 'ラッコ' },
   { emoji: '🦘', label: 'カンガルー' },
   { emoji: '🦭', label: 'アザラシ' },
   { emoji: '🐺', label: 'オオカミ' },
@@ -79,6 +79,7 @@ const DIFFICULTY_OPTIONS = [
   { key: 'medium', nRows: 3, nCols: 2, label: '6ピース' },
   { key: 'hard9',  nRows: 3, nCols: 3, label: '9ピース' },
   { key: 'hard',   nRows: 3, nCols: 4, label: '12ピース' },
+  { key: 'hard24', nRows: 4, nCols: 6, label: '24ピース' },
 ]
 
 function EmojiSlice({ emoji, row, col, nRows, nCols, pieceSize, silhouette = false }) {
@@ -545,7 +546,7 @@ function FlyingKey({ from, to, onComplete }) {
 function SelectScreen({ animalIndex, lockedStatus, keyCount, isAnimating,
                         difficulty, starsLit, keyEarnAnim, onCollect,
                         onPrev, onNext, onStart, onUnlock, onDifficultyChange,
-                        onGacha, coinCount, onCollection }) {
+                        onGacha, coinCount }) {
   const n = ANIMALS.length
   const prevIdx = (animalIndex - 1 + n) % n
   const nextIdx = (animalIndex + 1) % n
@@ -658,9 +659,6 @@ function SelectScreen({ animalIndex, lockedStatus, keyCount, isAnimating,
         </button>
       )}
 
-      <button className="btn-collection" onClick={onCollection}>
-        🧸 おもちゃばこ
-      </button>
     </div>
   )
 }
@@ -794,7 +792,7 @@ function CollectionScreen({ onBack, collection }) {
     <div className="collection-screen">
       <div className="collection-screen__header">
         <button className="btn-back" onClick={onBack}>◀ もどる</button>
-        <h1 className="collection-screen__title">🧸 おもちゃばこ</h1>
+        <h1 className="collection-screen__title">🎁 おもちゃばこ</h1>
       </div>
 
       {collection.length === 0 ? (
@@ -892,7 +890,7 @@ function CollectionScreen({ onBack, collection }) {
 }
 
 // ── ガチャガチャ画面 ──────────────────────────────────────────────────────────
-function GachaScreen({ onBack, onCollection, coinCount, coinCounterRef, machineRef, onCoinTap, insertedCoins, onGachaTriggered, onToyCollected, onToyTap, collectedCount }) {
+function GachaScreen({ onBack, coinCount, coinCounterRef, machineRef, onCoinTap, insertedCoins, onGachaTriggered, onToyCollected, onToyTap, toyboxRef }) {
   const [phase,         setPhase]        = useState('idle')  // 'idle' | 'capsule'
   const [showWhiteout,  setShowWhiteout] = useState(false)
   const [capsuleColor,  setCapsuleColor] = useState(null)
@@ -901,9 +899,8 @@ function GachaScreen({ onBack, onCollection, coinCount, coinCounterRef, machineR
   const [arrowRotation, setArrowRotation] = useState(0)
   const [isDragging,    setIsDragging]   = useState(false)
 
-  const arrowRef       = useRef(null)
-  const toyWrapperRef  = useRef(null)
-  const toyboxBadgeRef = useRef(null)
+  const arrowRef      = useRef(null)
+  const toyWrapperRef = useRef(null)
   const swipeState = useRef({ active: false, cx: 0, cy: 0, lastAngle: 0, totalAngle: 0 })
 
   const triggerGacha = useCallback(() => {
@@ -1009,10 +1006,6 @@ function GachaScreen({ onBack, onCollection, coinCount, coinCounterRef, machineR
 
       <div className="gacha-screen__footer">
         <button className="btn-gacha-back" onClick={onBack}>◀ もどる</button>
-        <button className="btn-collection" ref={toyboxBadgeRef} onClick={onCollection}>
-          🧸 おもちゃばこ
-          {collectedCount > 0 && <span className="gacha-toybox-badge__count">{collectedCount}</span>}
-        </button>
       </div>
 
       {/* ホワイトアウト */}
@@ -1061,7 +1054,7 @@ function GachaScreen({ onBack, onCollection, coinCount, coinCounterRef, machineR
                 onToyCollected(toyEmoji)
               } else {
                 const toyEl   = toyWrapperRef.current
-                const badgeEl = toyboxBadgeRef.current
+                const badgeEl = toyboxRef?.current
                 if (toyEl && badgeEl) {
                   const fromRect = toyEl.getBoundingClientRect()
                   const toRect   = badgeEl.getBoundingClientRect()
@@ -1414,14 +1407,17 @@ export default function ShadowPuzzle() {
   const [coinCount,      setCoinCount]     = useState(() => lsGet(LS.coinCount, 0))
   const [toyCollection,  setToyCollection] = useState(() => lsGet(LS.toyCollection, []))
 
-  const keyCounterRef  = useRef(null)
-  const gachaCoinRef   = useRef(null)
-  const gachaMachineRef = useRef(null)
-  const pendingKeyRef  = useRef(false)
+  const keyCounterRef    = useRef(null)
+  const gachaCoinRef     = useRef(null)
+  const gachaMachineRef  = useRef(null)
+  const pendingKeyRef    = useRef(false)
+  const toyboxBtnRef     = useRef(null)
 
   const [flyingCoin,         setFlyingCoin]         = useState(null)
   const [flyingToy,          setFlyingToy]          = useState(null)
   const [gachaInsertedCoins, setGachaInsertedCoins] = useState(0)
+
+  const [audioReady, setAudioReady] = useState(false)
 
   useEffect(() => {
     let started = false
@@ -1429,7 +1425,7 @@ export default function ShadowPuzzle() {
       if (started) return
       started = true
       unlockAudio()
-      startBgm('select')
+      setAudioReady(true)
       window.removeEventListener('touchstart', start)
       window.removeEventListener('pointerdown', start)
     }
@@ -1440,6 +1436,16 @@ export default function ShadowPuzzle() {
       window.removeEventListener('pointerdown', start)
     }
   }, [])
+
+  useEffect(() => {
+    if (!audioReady || !soundOn) return
+    startBgm(
+      screen === 'play'       ? 'play'
+      : screen === 'gacha'      ? 'gacha'
+      : screen === 'collection' ? 'collection'
+      : 'select'
+    )
+  }, [screen, audioReady])
 
   const toggleSound = useCallback(() => {
     setSoundOn(prev => {
@@ -1584,13 +1590,11 @@ export default function ShadowPuzzle() {
 
   const handleStart = useCallback(() => {
     setBalloonScore(0)
-    startBgm('play')
     setScreen('play')
   }, [])
 
   const handleBack = useCallback(() => {
     setBalloonScore(0)
-    startBgm('select')
     setScreen('select')
   }, [])
 
@@ -1601,6 +1605,14 @@ export default function ShadowPuzzle() {
         <div className="score-group">
           <BalloonScore count={balloonScore} />
           <CoinCounter  count={coinCount} />
+          {screen !== 'collection' && (
+            <button ref={toyboxBtnRef} className="btn-collection" onClick={() => setScreen('collection')}>
+              🎁 おもちゃばこ
+              {toyCollection.length > 0 && (
+                <span className="gacha-toybox-badge__count">{toyCollection.length}</span>
+              )}
+            </button>
+          )}
         </div>
       )}
 
@@ -1647,12 +1659,12 @@ export default function ShadowPuzzle() {
 
       {screen === 'collection' ? (
         <CollectionScreen
-          onBack={() => { startBgm('select'); setScreen('select') }}
+          onBack={() => setScreen('select')}
           collection={toyCollection}
         />
       ) : screen === 'gacha' ? (
         <GachaScreen
-          onBack={() => { startBgm('select'); setScreen('select'); setGachaInsertedCoins(0) }}
+          onBack={() => { setScreen('select'); setGachaInsertedCoins(0) }}
           coinCount={coinCount}
           coinCounterRef={gachaCoinRef}
           machineRef={gachaMachineRef}
@@ -1661,8 +1673,7 @@ export default function ShadowPuzzle() {
           onGachaTriggered={() => setGachaInsertedCoins(0)}
           onToyCollected={handleToyCollected}
           onToyTap={handleToyTap}
-          collectedCount={toyCollection.length}
-          onCollection={() => { startBgm('collection'); setScreen('collection') }}
+          toyboxRef={toyboxBtnRef}
         />
       ) : screen === 'select' ? (
         <SelectScreen
@@ -1679,9 +1690,8 @@ export default function ShadowPuzzle() {
           onStart={handleStart}
           onUnlock={handleUnlock}
           onDifficultyChange={setDifficulty}
-          onGacha={() => { startBgm('gacha'); setScreen('gacha') }}
+          onGacha={() => setScreen('gacha')}
           coinCount={coinCount}
-          onCollection={() => { startBgm('collection'); setScreen('collection') }}
         />
       ) : (
         <PlayScreen
