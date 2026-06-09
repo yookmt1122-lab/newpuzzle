@@ -415,14 +415,21 @@ const KeyCounter = forwardRef(function KeyCounter({ count }, ref) {
 })
 
 // ── 風船スコア＆コインカウンター ──────────────────────────────────────────────
-function BalloonScore({ count }) {
+const BalloonScore = forwardRef(function BalloonScore({ count, onExchange }, ref) {
+  const canExchange = count >= 10
   return (
-    <div className="score-pill">
+    <div
+      ref={ref}
+      className={`score-pill${canExchange ? ' score-pill--balloon-ready' : ''}`}
+      onClick={canExchange ? onExchange : undefined}
+      role={canExchange ? 'button' : undefined}
+      aria-label={canExchange ? 'バルーンをコインに交換する' : undefined}
+    >
       <span className="score-pill__icon">🎈</span>
       <span className="score-pill__count score-pill__count--balloon">{count}</span>
     </div>
   )
-}
+})
 
 const CoinCounter = forwardRef(function CoinCounter({ count, active }, ref) {
   return (
@@ -432,6 +439,40 @@ const CoinCounter = forwardRef(function CoinCounter({ count, active }, ref) {
     </div>
   )
 })
+
+// ── バルーン→コイン交換モーダル ───────────────────────────────────────────────
+function ExchangeModal({ balloonCount, onExchange, onClose }) {
+  const maxCoins = Math.floor(balloonCount / 10)
+  return (
+    <div className="exchange-modal__overlay" onClick={onClose}>
+      <motion.div
+        className="exchange-modal"
+        onClick={e => e.stopPropagation()}
+        initial={{ scale: 0.7, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.7, opacity: 0 }}
+        transition={{ type: 'spring', stiffness: 320, damping: 22 }}
+      >
+        <p className="exchange-modal__title">🎈 → 🪙 こうかん</p>
+        <p className="exchange-modal__desc">
+          🎈 <strong>{balloonCount}</strong>こ もってるよ！
+        </p>
+        <p className="exchange-modal__rate">10こ で 🪙 1まい</p>
+        {maxCoins >= 1 && (
+          <p className="exchange-modal__available">{maxCoins}まい こうかんできるよ！</p>
+        )}
+        <div className="exchange-modal__buttons">
+          <button className="exchange-modal__btn exchange-modal__btn--ok" onClick={onExchange}>
+            こうかんする！
+          </button>
+          <button className="exchange-modal__btn exchange-modal__btn--cancel" onClick={onClose}>
+            とじる
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  )
+}
 
 // ── 飛ぶコインアニメーション ──────────────────────────────────────────────────
 function FlyingCoin({ from, to, onComplete }) {
@@ -1400,18 +1441,21 @@ export default function ShadowPuzzle() {
   })
   const [clearCount,   setClearCount]   = useState(() => lsGet(LS.clearCount, 0))
 
-  const [flyKey,        setFlyKey]       = useState(null)
-  const [soundOn,       setSoundOn]      = useState(true)
-  const [keyEarnAnim,   setKeyEarnAnim]  = useState(null)
-  const [balloonScore,   setBalloonScore]  = useState(0)
-  const [coinCount,      setCoinCount]     = useState(() => lsGet(LS.coinCount, 0))
-  const [toyCollection,  setToyCollection] = useState(() => lsGet(LS.toyCollection, []))
+  const [flyKey,           setFlyKey]          = useState(null)
+  const [soundOn,          setSoundOn]         = useState(true)
+  const [keyEarnAnim,      setKeyEarnAnim]     = useState(null)
+  const [balloonScore,     setBalloonScore]    = useState(0)
+  const [coinCount,        setCoinCount]       = useState(() => lsGet(LS.coinCount, 0))
+  const [toyCollection,    setToyCollection]   = useState(() => lsGet(LS.toyCollection, []))
+  const [showExchangeModal, setShowExchangeModal] = useState(false)
 
   const keyCounterRef    = useRef(null)
   const gachaCoinRef     = useRef(null)
   const gachaMachineRef  = useRef(null)
   const pendingKeyRef    = useRef(false)
   const toyboxBtnRef     = useRef(null)
+  const balloonPillRef   = useRef(null)
+  const coinPillRef      = useRef(null)
 
   const [flyingCoin,         setFlyingCoin]         = useState(null)
   const [flyingToy,          setFlyingToy]          = useState(null)
@@ -1463,12 +1507,22 @@ export default function ShadowPuzzle() {
   useEffect(() => { localStorage.setItem(LS.coinCount,     JSON.stringify(coinCount))     }, [coinCount])
   useEffect(() => { localStorage.setItem(LS.toyCollection, JSON.stringify(toyCollection)) }, [toyCollection])
 
-  // 10点たまったら自動でコイン1枚に交換
-  useEffect(() => {
-    if (balloonScore >= 10) {
-      setCoinCount(c => c + 1)
-      setBalloonScore(s => s - 10)
+  const handleExchange = useCallback(() => {
+    if (balloonScore < 10) return
+    const fromEl = balloonPillRef.current
+    const toEl   = coinPillRef.current
+    if (fromEl && toEl) {
+      const fromRect = fromEl.getBoundingClientRect()
+      const toRect   = toEl.getBoundingClientRect()
+      setFlyingCoin({
+        from: { x: fromRect.left + fromRect.width  / 2, y: fromRect.top  + fromRect.height / 2 },
+        to:   { x: toRect.left   + toRect.width   / 2, y: toRect.top    + toRect.height   / 2 },
+      })
     }
+    setBalloonScore(s => s - 10)
+    setCoinCount(c => c + 1)
+    playPop()
+    if (balloonScore - 10 < 10) setShowExchangeModal(false)
   }, [balloonScore])
 
   useEffect(() => {
@@ -1603,8 +1657,8 @@ export default function ShadowPuzzle() {
       <KeyCounter ref={keyCounterRef} count={keyCount} />
       {screen !== 'gacha' && (
         <div className="score-group">
-          <BalloonScore count={balloonScore} />
-          <CoinCounter  count={coinCount} />
+          <BalloonScore ref={balloonPillRef} count={balloonScore} onExchange={() => setShowExchangeModal(true)} />
+          <CoinCounter  ref={coinPillRef} count={coinCount} />
           {screen !== 'collection' && (
             <button ref={toyboxBtnRef} className="btn-collection" onClick={() => setScreen('collection')}>
               🎁 おもちゃばこ
@@ -1615,6 +1669,16 @@ export default function ShadowPuzzle() {
           )}
         </div>
       )}
+      <AnimatePresence>
+        {showExchangeModal && (
+          <ExchangeModal
+            key="exchange-modal"
+            balloonCount={balloonScore}
+            onExchange={handleExchange}
+            onClose={() => setShowExchangeModal(false)}
+          />
+        )}
+      </AnimatePresence>
 
       <button className="btn-debug-reset" onClick={handleDebugReset} aria-label="データをリセット">
         🗑
