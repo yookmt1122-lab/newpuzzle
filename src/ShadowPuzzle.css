@@ -2,7 +2,7 @@
 .btn-debug-reset {
   position: fixed;
   bottom: 14px;
-  left: 14px;
+  left: 44px;
   z-index: 1000;
   padding: 4px;
   border: none;
@@ -1410,7 +1410,7 @@
 .btn-parental {
   position: fixed;
   bottom: 14px;
-  left: 84px;
+  left: 14px;
   z-index: 1000;
   padding: 4px;
   border: none;

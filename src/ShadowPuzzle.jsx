@@ -1773,7 +1773,7 @@ export default function ShadowPuzzle() {
 
   return (
     <>
-      <KeyCounter ref={keyCounterRef} count={keyCount} />
+      {screen !== 'parent' && <KeyCounter ref={keyCounterRef} count={keyCount} />}
       {screen === 'gacha' && (
         <button ref={toyboxBtnRef} className="btn-collection btn-collection--fixed" onClick={() => setScreen('collection')}>
           🎁 おもちゃばこ
@@ -1782,7 +1782,7 @@ export default function ShadowPuzzle() {
           )}
         </button>
       )}
-      {screen !== 'gacha' && (
+      {screen !== 'gacha' && screen !== 'parent' && (
         <div className="score-group">
           <BalloonScore ref={balloonPillRef} count={balloonScore} onExchange={() => setShowExchangeModal(true)} />
           <CoinCounter  ref={coinPillRef} count={coinCount} />
