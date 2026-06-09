@@ -1847,14 +1847,15 @@ export default function ShadowPuzzle() {
   useEffect(() => { localStorage.setItem(LS.parentalSettings, JSON.stringify(parentalSettings)) }, [parentalSettings])
   useEffect(() => { localStorage.setItem(LS.dailyStats,       JSON.stringify(dailyStats))       }, [dailyStats])
 
-  // A: 1日のプレイ時間カウント
+  // A: 1日のプレイ時間カウント（ペアレンツ設定画面以外は常時計測）
   useEffect(() => {
-    if (screen !== 'play') return
+    if (screen === 'parent') return
+    if (!parentalSettings.timeLimit.enabled) return
     const id = setInterval(() => {
       setDailyStats(s => ({ ...s, playSeconds: s.playSeconds + 1 }))
     }, 1000)
     return () => clearInterval(id)
-  }, [screen])
+  }, [screen, parentalSettings.timeLimit.enabled])
 
   // D: 連続プレイ計測 → 休憩トリガー
   useEffect(() => {
