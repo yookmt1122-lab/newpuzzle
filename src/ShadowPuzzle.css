@@ -1805,3 +1805,97 @@
   font-weight: 500;
   margin: 0;
 }
+
+/* ── 制限インジケーター（右下）────────────────────────────────────────────── */
+.play-indicators {
+  position: fixed;
+  bottom: 54px;
+  right: 14px;
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  pointer-events: none;
+}
+
+/* 円弧タイマー */
+.circle-timer {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.14));
+}
+
+.circle-timer__label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  gap: 1px;
+}
+
+.circle-timer__num {
+  font-size: 1.15rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.circle-timer__unit {
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: #999;
+  line-height: 1;
+}
+
+@keyframes timer-pulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.07); }
+}
+
+.circle-timer--low {
+  animation: timer-pulse 1s ease-in-out infinite;
+}
+
+/* クリア数カウンター */
+.clear-counter {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(255,255,255,0.92);
+  border-radius: 20px;
+  padding: 5px 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.13);
+}
+
+.clear-counter__icon {
+  font-size: 0.95rem;
+}
+
+.clear-counter__label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #aaa;
+}
+
+.clear-counter__num {
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #333;
+  min-width: 18px;
+  text-align: center;
+  transition: color 0.3s;
+}
+
+@keyframes count-pulse {
+  0%, 100% { transform: scale(1); }
+  30%       { transform: scale(1.35); }
+}
+
+.clear-counter--low .clear-counter__num {
+  color: #F44336;
+  animation: count-pulse 0.5s ease-out;
+}

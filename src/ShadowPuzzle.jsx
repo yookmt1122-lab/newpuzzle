@@ -680,6 +680,60 @@ function ParentControlScreen({ onBack, settings, onSettingsChange, dailyStats })
   )
 }
 
+// ── 時間制限 円弧タイマー ─────────────────────────────────────────────────────
+function CircleTimer({ playedSeconds, limitMinutes }) {
+  const totalSecs  = limitMinutes * 60
+  const remainSecs = Math.max(0, totalSecs - playedSeconds)
+  const ratio      = totalSecs > 0 ? remainSecs / totalSecs : 0
+
+  const R  = 24
+  const C  = 2 * Math.PI * R
+  const dash = ratio * C
+
+  const color = ratio > 0.5 ? '#4CAF50' : ratio > 0.25 ? '#FF9800' : '#F44336'
+  const isLow = ratio <= 0.25
+
+  const labelNum  = remainSecs > 60 ? Math.floor(remainSecs / 60) : remainSecs
+  const labelUnit = remainSecs > 60 ? '分' : '秒'
+
+  return (
+    <div className={`circle-timer${isLow ? ' circle-timer--low' : ''}`} aria-label={`残り${labelNum}${labelUnit}`}>
+      <svg width="60" height="60" viewBox="0 0 60 60">
+        <circle cx="30" cy="30" r={R} fill="rgba(255,255,255,0.85)" />
+        <circle cx="30" cy="30" r={R} fill="none" stroke="#e8e8e8" strokeWidth="5" />
+        <circle
+          cx="30" cy="30" r={R}
+          fill="none"
+          stroke={color}
+          strokeWidth="5"
+          strokeLinecap="round"
+          strokeDasharray={`${dash} ${C}`}
+          transform="rotate(-90 30 30)"
+          style={{ transition: 'stroke-dasharray 0.9s linear, stroke 0.5s' }}
+        />
+      </svg>
+      <div className="circle-timer__label">
+        <span className="circle-timer__num" style={{ color: isLow ? '#F44336' : '#333' }}>{labelNum}</span>
+        <span className="circle-timer__unit">{labelUnit}</span>
+      </div>
+    </div>
+  )
+}
+
+// ── クリア数カウンター ─────────────────────────────────────────────────────────
+function ClearCounter({ usedCount, limitCount }) {
+  const remaining = Math.max(0, limitCount - usedCount)
+  const isLow     = remaining <= 1
+  return (
+    <div className={`clear-counter${isLow ? ' clear-counter--low' : ''}`}>
+      <span className="clear-counter__icon">🧩</span>
+      <span className="clear-counter__label">あと</span>
+      <span className="clear-counter__num">{remaining}</span>
+      <span className="clear-counter__label">かい</span>
+    </div>
+  )
+}
+
 // ── 制限到達オーバーレイ ──────────────────────────────────────────────────────
 function DailyLimitOverlay({ onParental }) {
   return (
@@ -2049,6 +2103,17 @@ export default function ShadowPuzzle() {
       <button className="btn-sound-toggle" onClick={toggleSound} aria-label="サウンドトグル">
         {soundOn ? '🔊' : '🔇'}
       </button>
+
+      {screen !== 'parent' && (parentalSettings.timeLimit.enabled || parentalSettings.clearLimit.enabled) && (
+        <div className="play-indicators">
+          {parentalSettings.clearLimit.enabled && (
+            <ClearCounter usedCount={dailyStats.clearCount} limitCount={parentalSettings.clearLimit.limitCount} />
+          )}
+          {parentalSettings.timeLimit.enabled && (
+            <CircleTimer playedSeconds={dailyStats.playSeconds} limitMinutes={parentalSettings.timeLimit.limitMinutes} />
+          )}
+        </div>
+      )}
 
       <AnimatePresence>
         {flyKey && (
