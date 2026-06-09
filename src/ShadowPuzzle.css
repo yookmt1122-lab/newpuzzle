@@ -1405,3 +1405,188 @@
   background: rgba(0,0,0,0.18);
   border-radius: 50%;
 }
+
+/* ── ペアレンツコントロール 歯車ボタン ────────────────────────────────────── */
+.btn-parental {
+  position: fixed;
+  bottom: 14px;
+  left: 44px;
+  z-index: 1000;
+  padding: 4px;
+  border: none;
+  background: none;
+  font-size: 1.1rem;
+  opacity: 0.25;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  line-height: 1;
+}
+
+.btn-parental:hover {
+  opacity: 0.7;
+}
+
+/* ── ペアレンツコントロール パスワードモーダル ────────────────────────────── */
+.parent-modal__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9000;
+}
+
+.parent-modal {
+  background: #fff;
+  border-radius: 20px;
+  padding: 28px 24px 20px;
+  min-width: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.22);
+}
+
+.parent-modal__title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #555;
+  margin: 0;
+}
+
+.parent-modal__dots {
+  display: flex;
+  gap: 14px;
+}
+
+.parent-modal__dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ddd;
+  border: 2px solid #bbb;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.parent-modal__dot--filled {
+  background: #555;
+  border-color: #333;
+}
+
+.parent-modal__dots--error .parent-modal__dot--filled {
+  background: #e44;
+  border-color: #c22;
+}
+
+.parent-modal__error {
+  font-size: 0.82rem;
+  color: #e44;
+  margin: -8px 0;
+  font-weight: 500;
+}
+
+.parent-modal__keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+}
+
+.parent-modal__key {
+  padding: 14px 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  border: 2px solid #ddd;
+  border-radius: 12px;
+  background: #f8f8f8;
+  cursor: pointer;
+  transition: background 0.12s, transform 0.08s;
+  touch-action: manipulation;
+}
+
+.parent-modal__key:active {
+  background: #e8e8e8;
+  transform: scale(0.93);
+}
+
+.parent-modal__key--del {
+  background: #ffeaea;
+  border-color: #f4bbbb;
+  color: #c55;
+}
+
+.parent-modal__cancel {
+  padding: 8px 28px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 20px;
+  background: #eee;
+  color: #888;
+  cursor: pointer;
+  transition: background 0.15s;
+  touch-action: manipulation;
+}
+
+.parent-modal__cancel:hover {
+  background: #ddd;
+}
+
+/* ── ペアレンツコントロール画面 ───────────────────────────────────────────── */
+.parent-control {
+  position: fixed;
+  inset: 0;
+  background: #f8f6ff;
+  display: flex;
+  flex-direction: column;
+  z-index: 500;
+}
+
+.parent-control__header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #e0daf8;
+  background: #fff;
+}
+
+.parent-control__back {
+  padding: 8px 18px;
+  border: 2px solid #b0a0e0;
+  border-radius: 20px;
+  background: #fff;
+  color: #6050b0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  touch-action: manipulation;
+  white-space: nowrap;
+}
+
+.parent-control__back:hover {
+  background: #f0ecff;
+}
+
+.parent-control__title {
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: #4a3a8a;
+  margin: 0;
+}
+
+.parent-control__body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.parent-control__empty {
+  font-size: 0.95rem;
+  color: #aaa;
+  font-weight: 500;
+}

@@ -490,6 +490,83 @@ function ExchangeModal({ balloonCount, onExchange, onClose }) {
   )
 }
 
+// ── ペアレンツコントロール パスワードモーダル ─────────────────────────────────
+function ParentPasswordModal({ onSuccess, onClose }) {
+  const [input, setInput]   = useState('')
+  const [error, setError]   = useState(false)
+  const PASSWORD = '1987'
+  const MAX_LEN  = 4
+
+  const handleDigit = (d) => {
+    if (input.length >= MAX_LEN) return
+    setError(false)
+    const next = input + d
+    setInput(next)
+    if (next.length === MAX_LEN) {
+      if (next === PASSWORD) {
+        onSuccess()
+      } else {
+        setError(true)
+        setTimeout(() => { setInput(''); setError(false) }, 800)
+      }
+    }
+  }
+
+  const handleDel = () => {
+    setError(false)
+    setInput(s => s.slice(0, -1))
+  }
+
+  const KEYS = ['1','2','3','4','5','6','7','8','9','←','0','']
+
+  return (
+    <div className="parent-modal__overlay" onClick={onClose}>
+      <motion.div
+        className="parent-modal"
+        onClick={e => e.stopPropagation()}
+        initial={{ scale: 0.7, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.7, opacity: 0 }}
+        transition={{ type: 'spring', stiffness: 320, damping: 22 }}
+      >
+        <p className="parent-modal__title">🔒 ほごしゃのかたへ</p>
+        <div className={`parent-modal__dots${error ? ' parent-modal__dots--error' : ''}`}>
+          {Array.from({ length: MAX_LEN }).map((_, i) => (
+            <span key={i} className={`parent-modal__dot${i < input.length ? ' parent-modal__dot--filled' : ''}`} />
+          ))}
+        </div>
+        {error && <p className="parent-modal__error">パスワードが違います</p>}
+        <div className="parent-modal__keypad">
+          {KEYS.map((k, i) =>
+            k === '' ? <span key={i} /> :
+            k === '←' ? (
+              <button key={i} className="parent-modal__key parent-modal__key--del" onClick={handleDel}>←</button>
+            ) : (
+              <button key={i} className="parent-modal__key" onClick={() => handleDigit(k)}>{k}</button>
+            )
+          )}
+        </div>
+        <button className="parent-modal__cancel" onClick={onClose}>とじる</button>
+      </motion.div>
+    </div>
+  )
+}
+
+// ── ペアレンツコントロール画面 ─────────────────────────────────────────────────
+function ParentControlScreen({ onBack }) {
+  return (
+    <div className="parent-control">
+      <header className="parent-control__header">
+        <button className="parent-control__back" onClick={onBack}>← もどる</button>
+        <h1 className="parent-control__title">⚙ ペアレンツコントロール</h1>
+      </header>
+      <div className="parent-control__body">
+        <p className="parent-control__empty">（設定項目は近日追加予定）</p>
+      </div>
+    </div>
+  )
+}
+
 // ── 飛ぶコインアニメーション ──────────────────────────────────────────────────
 function FlyingCoin({ from, to, onComplete }) {
   const dx = to.x - from.x
@@ -1491,6 +1568,7 @@ export default function ShadowPuzzle() {
   const [coinCount,        setCoinCount]       = useState(() => lsGet(LS.coinCount, 0))
   const [toyCollection,    setToyCollection]   = useState(() => lsGet(LS.toyCollection, []))
   const [showExchangeModal, setShowExchangeModal] = useState(false)
+  const [showParentModal,   setShowParentModal]   = useState(false)
 
   const keyCounterRef    = useRef(null)
   const gachaCoinRef     = useRef(null)
@@ -1729,8 +1807,22 @@ export default function ShadowPuzzle() {
         )}
       </AnimatePresence>
 
+      <AnimatePresence>
+        {showParentModal && (
+          <ParentPasswordModal
+            key="parent-modal"
+            onSuccess={() => { setShowParentModal(false); setScreen('parent') }}
+            onClose={() => setShowParentModal(false)}
+          />
+        )}
+      </AnimatePresence>
+
       <button className="btn-debug-reset" onClick={handleDebugReset} aria-label="データをリセット">
         🗑
+      </button>
+
+      <button className="btn-parental" onClick={() => setShowParentModal(true)} aria-label="ペアレンツコントロール">
+        ⚙
       </button>
 
       <button className="btn-unlock-all" onClick={handleUnlockAll} aria-label="全鍵開放" />
@@ -1770,7 +1862,9 @@ export default function ShadowPuzzle() {
         )}
       </AnimatePresence>
 
-      {screen === 'collection' ? (
+      {screen === 'parent' ? (
+        <ParentControlScreen onBack={() => setScreen('select')} />
+      ) : screen === 'collection' ? (
         <CollectionScreen
           onBack={() => setScreen('select')}
           collection={toyCollection}
