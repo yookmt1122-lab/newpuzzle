@@ -3,7 +3,7 @@
   position: fixed;
   bottom: 14px;
   left: 44px;
-  z-index: 1000;
+  z-index: 1002;
   padding: 4px;
   border: none;
   background: none;
@@ -1411,7 +1411,7 @@
   position: fixed;
   bottom: 14px;
   left: 14px;
-  z-index: 1000;
+  z-index: 1002;
   padding: 4px;
   border: none;
   background: none;

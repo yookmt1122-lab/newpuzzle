@@ -1821,6 +1821,10 @@ export default function ShadowPuzzle() {
   }, [])
 
   useEffect(() => {
+    if (screen === 'gacha') setGachaInsertedCoins(0)
+  }, [screen])
+
+  useEffect(() => {
     if (!audioReady || !soundOn) return
     startBgm(
       screen === 'play'       ? 'play'
@@ -1901,6 +1905,7 @@ export default function ShadowPuzzle() {
       const fromRect = fromEl.getBoundingClientRect()
       const toRect   = toEl.getBoundingClientRect()
       setFlyingCoin({
+        type: 'exchange',
         from: { x: fromRect.left + fromRect.width  / 2, y: fromRect.top  + fromRect.height / 2 },
         to:   { x: toRect.left   + toRect.width   / 2, y: toRect.top    + toRect.height   / 2 },
       })
@@ -2022,6 +2027,7 @@ export default function ShadowPuzzle() {
     playKeyFly()
     setCoinCount(c => Math.max(0, c - 1))
     setFlyingCoin({
+      type: 'gacha',
       from: { x: fromRect.left + fromRect.width  / 2, y: fromRect.top  + fromRect.height / 2 },
       to:   { x: toRect.left   + toRect.width    / 2, y: toRect.top    + toRect.height   / 2 },
     })
@@ -2131,8 +2137,9 @@ export default function ShadowPuzzle() {
             from={flyingCoin.from}
             to={flyingCoin.to}
             onComplete={() => {
+              const isGacha = flyingCoin?.type === 'gacha'
               setFlyingCoin(null)
-              setGachaInsertedCoins(c => c + 1)
+              if (isGacha) setGachaInsertedCoins(c => c + 1)
             }}
           />
         )}
@@ -2170,7 +2177,7 @@ export default function ShadowPuzzle() {
           onToyCollected={handleToyCollected}
           onToyTap={handleToyTap}
           toyboxRef={toyboxBtnRef}
-          coinFlying={!!flyingCoin}
+          coinFlying={flyingCoin?.type === 'gacha'}
         />
       ) : screen === 'select' ? (
         <SelectScreen
