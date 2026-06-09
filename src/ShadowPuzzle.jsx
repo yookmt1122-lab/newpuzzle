@@ -553,7 +553,19 @@ function ParentPasswordModal({ onSuccess, onClose }) {
 }
 
 // ── ペアレンツコントロール画面 ─────────────────────────────────────────────────
-function ParentControlScreen({ onBack }) {
+function ParentControlScreen({ onBack, settings, onSettingsChange, dailyStats }) {
+  const set = (path, value) => {
+    const [section, key] = path.split('.')
+    onSettingsChange(prev => ({
+      ...prev,
+      [section]: { ...prev[section], [key]: value },
+    }))
+  }
+
+  const { timeLimit, clearLimit, breakReminder } = settings
+  const playedMins  = Math.floor(dailyStats.playSeconds / 60)
+  const playedSecs  = dailyStats.playSeconds % 60
+
   return (
     <div className="parent-control">
       <header className="parent-control__header">
@@ -561,7 +573,140 @@ function ParentControlScreen({ onBack }) {
         <h1 className="parent-control__title">⚙ ペアレンツコントロール</h1>
       </header>
       <div className="parent-control__body">
-        <p className="parent-control__empty">（設定項目は近日追加予定）</p>
+
+        {/* A: 1日のプレイ時間制限 */}
+        <div className="pc-card">
+          <div className="pc-card__row pc-card__row--header">
+            <span className="pc-card__icon">⏱</span>
+            <span className="pc-card__label">1日のプレイ時間制限</span>
+            <button
+              className={`pc-toggle${timeLimit.enabled ? ' pc-toggle--on' : ''}`}
+              onClick={() => set('timeLimit.enabled', !timeLimit.enabled)}
+              aria-label="切り替え"
+            >
+              <span className="pc-toggle__knob" />
+            </button>
+          </div>
+          {timeLimit.enabled && (
+            <div className="pc-card__options">
+              <p className="pc-card__status">
+                今日: {playedMins}分{playedSecs}秒 / {timeLimit.limitMinutes}分
+              </p>
+              <div className="pc-card__chips">
+                {[15, 30, 60].map(m => (
+                  <button
+                    key={m}
+                    className={`pc-chip${timeLimit.limitMinutes === m ? ' pc-chip--active' : ''}`}
+                    onClick={() => set('timeLimit.limitMinutes', m)}
+                  >{m}分</button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* B: 1日のクリア数制限 */}
+        <div className="pc-card">
+          <div className="pc-card__row pc-card__row--header">
+            <span className="pc-card__icon">🧩</span>
+            <span className="pc-card__label">1日のクリア数制限</span>
+            <button
+              className={`pc-toggle${clearLimit.enabled ? ' pc-toggle--on' : ''}`}
+              onClick={() => set('clearLimit.enabled', !clearLimit.enabled)}
+              aria-label="切り替え"
+            >
+              <span className="pc-toggle__knob" />
+            </button>
+          </div>
+          {clearLimit.enabled && (
+            <div className="pc-card__options">
+              <p className="pc-card__status">
+                今日: {dailyStats.clearCount}回 / {clearLimit.limitCount}回
+              </p>
+              <div className="pc-card__chips">
+                {[3, 5, 10].map(n => (
+                  <button
+                    key={n}
+                    className={`pc-chip${clearLimit.limitCount === n ? ' pc-chip--active' : ''}`}
+                    onClick={() => set('clearLimit.limitCount', n)}
+                  >{n}回</button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* D: 連続プレイ休憩 */}
+        <div className="pc-card">
+          <div className="pc-card__row pc-card__row--header">
+            <span className="pc-card__icon">😌</span>
+            <span className="pc-card__label">連続プレイ休憩</span>
+            <button
+              className={`pc-toggle${breakReminder.enabled ? ' pc-toggle--on' : ''}`}
+              onClick={() => set('breakReminder.enabled', !breakReminder.enabled)}
+              aria-label="切り替え"
+            >
+              <span className="pc-toggle__knob" />
+            </button>
+          </div>
+          {breakReminder.enabled && (
+            <div className="pc-card__options">
+              <p className="pc-card__sublabel">連続プレイ上限</p>
+              <div className="pc-card__chips">
+                {[10, 20, 30].map(m => (
+                  <button
+                    key={m}
+                    className={`pc-chip${breakReminder.playMinutes === m ? ' pc-chip--active' : ''}`}
+                    onClick={() => set('breakReminder.playMinutes', m)}
+                  >{m}分</button>
+                ))}
+              </div>
+              <p className="pc-card__sublabel">休憩時間</p>
+              <div className="pc-card__chips">
+                {[5, 10].map(m => (
+                  <button
+                    key={m}
+                    className={`pc-chip${breakReminder.breakMinutes === m ? ' pc-chip--active' : ''}`}
+                    onClick={() => set('breakReminder.breakMinutes', m)}
+                  >{m}分</button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
+// ── 制限到達オーバーレイ ──────────────────────────────────────────────────────
+function DailyLimitOverlay({ onParental }) {
+  return (
+    <div className="limit-overlay">
+      <div className="limit-overlay__card">
+        <p className="limit-overlay__moon">🌙</p>
+        <p className="limit-overlay__title">きょうはおしまい！</p>
+        <p className="limit-overlay__sub">また あしたね</p>
+        <button className="limit-overlay__parental" onClick={onParental}>⚙ ほごしゃのかたはこちら</button>
+      </div>
+    </div>
+  )
+}
+
+// ── 休憩オーバーレイ ──────────────────────────────────────────────────────────
+function BreakOverlay({ secsLeft }) {
+  const m = Math.floor(secsLeft / 60)
+  const s = secsLeft % 60
+  return (
+    <div className="break-overlay">
+      <div className="break-overlay__card">
+        <p className="break-overlay__emoji">😌</p>
+        <p className="break-overlay__title">ちょっと めをやすめよう！</p>
+        <p className="break-overlay__timer">
+          {m > 0 ? `${m}ふん ` : ''}{String(s).padStart(2, '0')}びょう
+        </p>
+        <p className="break-overlay__sub">もうすこし まってね</p>
       </div>
     </div>
   )
@@ -1525,11 +1670,19 @@ function PlayScreen({ animal, clearCount, difficulty, pieceSize, onBack, onCompl
 
 // ── localStorage キー ─────────────────────────────────────────────────────────
 const LS = {
-  keyCount:      'puzzle_keyCount',
-  locked:        'puzzle_lockedStatus',
-  clearCount:    'puzzle_clearCount',
-  coinCount:     'puzzle_coinCount',
-  toyCollection: 'puzzle_toyCollection',
+  keyCount:         'puzzle_keyCount',
+  locked:           'puzzle_lockedStatus',
+  clearCount:       'puzzle_clearCount',
+  coinCount:        'puzzle_coinCount',
+  toyCollection:    'puzzle_toyCollection',
+  parentalSettings: 'puzzle_parentalSettings',
+  dailyStats:       'puzzle_dailyStats',
+}
+
+const DEFAULT_PARENTAL = {
+  timeLimit:     { enabled: false, limitMinutes: 30 },
+  clearLimit:    { enabled: false, limitCount: 5 },
+  breakReminder: { enabled: false, playMinutes: 20, breakMinutes: 5 },
 }
 
 function lsGet(key, fallback) {
@@ -1569,6 +1722,16 @@ export default function ShadowPuzzle() {
   const [toyCollection,    setToyCollection]   = useState(() => lsGet(LS.toyCollection, []))
   const [showExchangeModal, setShowExchangeModal] = useState(false)
   const [showParentModal,   setShowParentModal]   = useState(false)
+  const [parentalSettings,  setParentalSettings]  = useState(() => lsGet(LS.parentalSettings, DEFAULT_PARENTAL))
+  const [dailyStats,        setDailyStats]        = useState(() => {
+    const today = new Date().toDateString()
+    const saved = lsGet(LS.dailyStats, { date: '', playSeconds: 0, clearCount: 0 })
+    if (saved.date !== today) return { date: today, playSeconds: 0, clearCount: 0 }
+    return saved
+  })
+  const [showBreakOverlay, setShowBreakOverlay] = useState(false)
+  const [breakSecsLeft,    setBreakSecsLeft]    = useState(0)
+  const continuousSecsRef = useRef(0)
 
   const keyCounterRef    = useRef(null)
   const gachaCoinRef     = useRef(null)
@@ -1622,11 +1785,56 @@ export default function ShadowPuzzle() {
     })
   }, [screen])
 
-  useEffect(() => { localStorage.setItem(LS.keyCount,      JSON.stringify(keyCount))      }, [keyCount])
-  useEffect(() => { localStorage.setItem(LS.locked,        JSON.stringify(lockedStatus))  }, [lockedStatus])
-  useEffect(() => { localStorage.setItem(LS.clearCount,    JSON.stringify(clearCount))    }, [clearCount])
-  useEffect(() => { localStorage.setItem(LS.coinCount,     JSON.stringify(coinCount))     }, [coinCount])
-  useEffect(() => { localStorage.setItem(LS.toyCollection, JSON.stringify(toyCollection)) }, [toyCollection])
+  useEffect(() => { localStorage.setItem(LS.keyCount,         JSON.stringify(keyCount))         }, [keyCount])
+  useEffect(() => { localStorage.setItem(LS.locked,           JSON.stringify(lockedStatus))     }, [lockedStatus])
+  useEffect(() => { localStorage.setItem(LS.clearCount,       JSON.stringify(clearCount))       }, [clearCount])
+  useEffect(() => { localStorage.setItem(LS.coinCount,        JSON.stringify(coinCount))        }, [coinCount])
+  useEffect(() => { localStorage.setItem(LS.toyCollection,    JSON.stringify(toyCollection))    }, [toyCollection])
+  useEffect(() => { localStorage.setItem(LS.parentalSettings, JSON.stringify(parentalSettings)) }, [parentalSettings])
+  useEffect(() => { localStorage.setItem(LS.dailyStats,       JSON.stringify(dailyStats))       }, [dailyStats])
+
+  // A: 1日のプレイ時間カウント
+  useEffect(() => {
+    if (screen !== 'play') return
+    const id = setInterval(() => {
+      setDailyStats(s => ({ ...s, playSeconds: s.playSeconds + 1 }))
+    }, 1000)
+    return () => clearInterval(id)
+  }, [screen])
+
+  // D: 連続プレイ計測 → 休憩トリガー
+  useEffect(() => {
+    if (screen !== 'play') {
+      continuousSecsRef.current = 0
+      return
+    }
+    if (!parentalSettings.breakReminder.enabled) return
+    const limitSecs = parentalSettings.breakReminder.playMinutes * 60
+    const id = setInterval(() => {
+      continuousSecsRef.current += 1
+      if (continuousSecsRef.current >= limitSecs) {
+        continuousSecsRef.current = 0
+        setShowBreakOverlay(true)
+      }
+    }, 1000)
+    return () => clearInterval(id)
+  }, [screen, parentalSettings.breakReminder.enabled, parentalSettings.breakReminder.playMinutes])
+
+  // 休憩カウントダウン
+  useEffect(() => {
+    if (!showBreakOverlay) return
+    let secs = parentalSettings.breakReminder.breakMinutes * 60
+    setBreakSecsLeft(secs)
+    const id = setInterval(() => {
+      secs -= 1
+      setBreakSecsLeft(secs)
+      if (secs <= 0) {
+        clearInterval(id)
+        setShowBreakOverlay(false)
+      }
+    }, 1000)
+    return () => clearInterval(id)
+  }, [showBreakOverlay])
 
   const handleExchange = useCallback(() => {
     if (balloonScore < 10) return
@@ -1742,6 +1950,7 @@ export default function ShadowPuzzle() {
 
   const handleComplete = useCallback(() => {
     setClearCount(prev => prev + 1)
+    setDailyStats(s => ({ ...s, clearCount: s.clearCount + 1 }))
   }, [])
 
   const handleToyTap = useCallback(({ emoji, from, to }) => {
@@ -1771,8 +1980,18 @@ export default function ShadowPuzzle() {
     setScreen('select')
   }, [])
 
+  const dailyLimitReached =
+    (parentalSettings.timeLimit.enabled  && dailyStats.playSeconds >= parentalSettings.timeLimit.limitMinutes * 60) ||
+    (parentalSettings.clearLimit.enabled && dailyStats.clearCount  >= parentalSettings.clearLimit.limitCount)
+
   return (
     <>
+      {dailyLimitReached && screen !== 'parent' && (
+        <DailyLimitOverlay onParental={() => setShowParentModal(true)} />
+      )}
+      {showBreakOverlay && (
+        <BreakOverlay secsLeft={breakSecsLeft} />
+      )}
       {screen !== 'parent' && <KeyCounter ref={keyCounterRef} count={keyCount} />}
       {screen === 'gacha' && (
         <button ref={toyboxBtnRef} className="btn-collection btn-collection--fixed" onClick={() => setScreen('collection')}>
@@ -1863,7 +2082,12 @@ export default function ShadowPuzzle() {
       </AnimatePresence>
 
       {screen === 'parent' ? (
-        <ParentControlScreen onBack={() => setScreen('select')} />
+        <ParentControlScreen
+          onBack={() => setScreen('select')}
+          settings={parentalSettings}
+          onSettingsChange={setParentalSettings}
+          dailyStats={dailyStats}
+        />
       ) : screen === 'collection' ? (
         <CollectionScreen
           onBack={() => setScreen('select')}
