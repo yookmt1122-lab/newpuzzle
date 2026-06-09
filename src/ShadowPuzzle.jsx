@@ -798,7 +798,7 @@ function CollectionScreen({ onBack, collection }) {
       {collection.length === 0 ? (
         <div className="collection-empty">
           <div className="collection-empty__icon">📦</div>
-          <p className="collection-empty__text">ガチャでおもちゃをゲットしよう！</p>
+          <p className="collection-empty__text">なにがでるかな？</p>
         </div>
       ) : (
         <div className="collection-grid">
