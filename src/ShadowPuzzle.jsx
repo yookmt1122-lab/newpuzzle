@@ -59,8 +59,8 @@ function calcPieceSize(nRows = 3, nCols = 1) {
   const vh = window.innerHeight
   const usableW  = vw - 32          // 左右パディング分
   const usableH  = vh * 0.9         // 画面の90%
-  // オーバーヘッド: パディング上下(24px) + ヘッダー(48px) + ギャップ×2(24px) + ステージ内パディング(20px)
-  const OVERHEAD = 116
+  // オーバーヘッド: パディング上下(24px) + ヘッダー(48px) + ギャップ×2(40px) + ステージ内パディング(20px)
+  const OVERHEAD = 132
   const contentH = usableH - OVERHEAD
   const nPieces  = nRows * nCols
 
