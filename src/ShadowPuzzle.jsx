@@ -1363,7 +1363,7 @@ function PlayScreen({ animal, clearCount, difficulty, pieceSize, onBack, onCompl
       </div>
 
       <section className="puzzle__stage">
-        <p className="stage__label">ここにはめよう！</p>
+
         <div className={`stage__slots${drag ? ' stage__slots--active' : ''}`}>
           {Array.from({ length: nRows }, (_, r) => (
             <div key={r} style={{ display: 'flex' }}>
@@ -1403,7 +1403,7 @@ function PlayScreen({ animal, clearCount, difficulty, pieceSize, onBack, onCompl
       </section>
 
       <section className="puzzle__tray">
-        <p className="tray__label">ドラッグしてね！</p>
+
         <div className="tray__pieces">
           {trayOrder.map((pieceId) => {
             const r = Math.floor(pieceId / nCols)
