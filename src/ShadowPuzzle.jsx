@@ -952,6 +952,7 @@ function GachaScreen({ onBack, coinCount, coinCounterRef, onCoinTap, insertedCoi
     setCapsuleColor(color)
     setToyEmoji(toy)
     setCapsuleOpen(false)
+    setPhase('spinning')
     setShowWhiteout(true)
     onGachaTriggered()
     setTimeout(() => setPhase('capsule'), 570)
@@ -1690,7 +1691,7 @@ export default function ShadowPuzzle() {
         <div className="score-group">
           <BalloonScore ref={balloonPillRef} count={balloonScore} onExchange={() => setShowExchangeModal(true)} />
           <CoinCounter  ref={coinPillRef} count={coinCount} />
-          {screen !== 'collection' && (
+          {screen === 'select' && (
             <button ref={toyboxBtnRef} className="btn-collection" onClick={() => setScreen('collection')}>
               🎁 おもちゃばこ
               {toyCollection.length > 0 && (
