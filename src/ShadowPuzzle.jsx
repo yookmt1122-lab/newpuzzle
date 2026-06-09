@@ -1728,6 +1728,7 @@ const LS = {
   locked:           'puzzle_lockedStatus',
   clearCount:       'puzzle_clearCount',
   coinCount:        'puzzle_coinCount',
+  balloonScore:     'puzzle_balloonScore',
   toyCollection:    'puzzle_toyCollection',
   parentalSettings: 'puzzle_parentalSettings',
   dailyStats:       'puzzle_dailyStats',
@@ -1771,7 +1772,7 @@ export default function ShadowPuzzle() {
   const [flyKey,           setFlyKey]          = useState(null)
   const [soundOn,          setSoundOn]         = useState(true)
   const [keyEarnAnim,      setKeyEarnAnim]     = useState(null)
-  const [balloonScore,     setBalloonScore]    = useState(0)
+  const [balloonScore,     setBalloonScore]    = useState(() => lsGet(LS.balloonScore, 0))
   const [coinCount,        setCoinCount]       = useState(() => lsGet(LS.coinCount, 0))
   const [toyCollection,    setToyCollection]   = useState(() => lsGet(LS.toyCollection, []))
   const [showExchangeModal, setShowExchangeModal] = useState(false)
@@ -1843,6 +1844,7 @@ export default function ShadowPuzzle() {
   useEffect(() => { localStorage.setItem(LS.locked,           JSON.stringify(lockedStatus))     }, [lockedStatus])
   useEffect(() => { localStorage.setItem(LS.clearCount,       JSON.stringify(clearCount))       }, [clearCount])
   useEffect(() => { localStorage.setItem(LS.coinCount,        JSON.stringify(coinCount))        }, [coinCount])
+  useEffect(() => { localStorage.setItem(LS.balloonScore,     JSON.stringify(balloonScore))     }, [balloonScore])
   useEffect(() => { localStorage.setItem(LS.toyCollection,    JSON.stringify(toyCollection))    }, [toyCollection])
   useEffect(() => { localStorage.setItem(LS.parentalSettings, JSON.stringify(parentalSettings)) }, [parentalSettings])
   useEffect(() => { localStorage.setItem(LS.dailyStats,       JSON.stringify(dailyStats))       }, [dailyStats])
@@ -2026,12 +2028,10 @@ export default function ShadowPuzzle() {
   }, [flyingCoin, coinCount])
 
   const handleStart = useCallback(() => {
-    setBalloonScore(0)
     setScreen('play')
   }, [])
 
   const handleBack = useCallback(() => {
-    setBalloonScore(0)
     setScreen('select')
   }, [])
 
