@@ -1658,18 +1658,18 @@ export default function ShadowPuzzle() {
   return (
     <>
       <KeyCounter ref={keyCounterRef} count={keyCount} />
+      {screen !== 'collection' && (
+        <button ref={toyboxBtnRef} className="btn-collection btn-collection--fixed" onClick={() => setScreen('collection')}>
+          🎁 おもちゃばこ
+          {toyCollection.length > 0 && (
+            <span className="gacha-toybox-badge__count">{toyCollection.length}</span>
+          )}
+        </button>
+      )}
       {screen !== 'gacha' && (
         <div className="score-group">
           <BalloonScore ref={balloonPillRef} count={balloonScore} onExchange={() => setShowExchangeModal(true)} />
           <CoinCounter  ref={coinPillRef} count={coinCount} />
-          {screen !== 'collection' && (
-            <button ref={toyboxBtnRef} className="btn-collection" onClick={() => setScreen('collection')}>
-              🎁 おもちゃばこ
-              {toyCollection.length > 0 && (
-                <span className="gacha-toybox-badge__count">{toyCollection.length}</span>
-              )}
-            </button>
-          )}
         </div>
       )}
       <AnimatePresence>

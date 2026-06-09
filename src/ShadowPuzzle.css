@@ -1116,7 +1116,16 @@
   cursor: pointer;
   transition: transform 0.1s, box-shadow 0.1s;
 }
+.btn-collection--fixed {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 1000;
+  backdrop-filter: blur(6px);
+  background: rgba(255,255,255,0.88);
+}
 .btn-collection:hover  { background: #F9F0FF; }
+.btn-collection--fixed:hover { background: rgba(249,240,255,0.95); }
 .btn-collection:active {
   transform: translateY(3px);
   box-shadow: 0 0 0 #C9A8E8, 0 2px 8px rgba(123,94,167,0.12);
