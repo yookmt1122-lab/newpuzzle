@@ -942,6 +942,7 @@ function GachaScreen({ onBack, coinCount, coinCounterRef, onCoinTap, insertedCoi
 
   const arrowRef      = useRef(null)
   const toyWrapperRef = useRef(null)
+  const machineRef    = useRef(null)
   const slotRefs      = [useRef(null), useRef(null), useRef(null)]
   const swipeState = useRef({ active: false, cx: 0, cy: 0, lastAngle: 0, totalAngle: 0 })
 
