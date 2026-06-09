@@ -696,7 +696,7 @@ function SelectScreen({ animalIndex, lockedStatus, keyCount, isAnimating,
 
       {coinCount >= 3 && (
         <button className="btn-gacha" onClick={onGacha}>
-          🎰 ガチャガチャモード
+          🪙 がちゃがちゃをまわす
         </button>
       )}
 
