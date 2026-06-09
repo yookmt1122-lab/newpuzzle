@@ -52,25 +52,41 @@ const INITIAL_LOCKED = [
   true, true, true, true, true, true,
 ]
 
-const PIECE_SIZE_MAX = 360
+const TRAY_ITEM_GAP = 12
 
-function calcPieceSize() {
+function calcPieceSize(nRows = 3, nCols = 1) {
   const vw = window.innerWidth
   const vh = window.innerHeight
-  // 横: puzzle padding 32px + stage padding 20px = 52px
-  const fromWidth  = vw - 52
-  // 縦: ステージ＋トレイ両方が収まるよう overhead ~300px を引いて2等分
-  const fromHeight = (vh - 300) / 2
-  return Math.max(Math.min(fromWidth, fromHeight, PIECE_SIZE_MAX), 200)
+  const usableW  = vw - 32          // 左右パディング分
+  const usableH  = vh * 0.9         // 画面の90%
+  // オーバーヘッド: パディング上下(24px) + ヘッダー(48px) + ギャップ×2(24px) + ステージ内パディング(20px)
+  const OVERHEAD = 116
+  const contentH = usableH - OVERHEAD
+  const nPieces  = nRows * nCols
+
+  let lo = 60, hi = Math.min(usableW, 480)
+
+  for (let i = 0; i < 40; i++) {
+    const ps       = (lo + hi) / 2
+    const cellW    = ps / nCols
+    const cellH    = ps / nRows
+    const perRow   = Math.max(1, Math.floor((usableW + TRAY_ITEM_GAP) / (cellW + TRAY_ITEM_GAP)))
+    const trayRows = Math.ceil(nPieces / perRow)
+    const trayH    = trayRows * cellH + (trayRows - 1) * TRAY_ITEM_GAP
+    if (ps + trayH <= contentH) lo = ps
+    else hi = ps
+  }
+
+  return Math.max(lo, 60)
 }
 
-function usePieceSize() {
-  const [size, setSize] = useState(calcPieceSize)
+function usePieceSize(nRows, nCols) {
+  const [size, setSize] = useState(() => calcPieceSize(nRows, nCols))
   useEffect(() => {
-    const handler = () => setSize(calcPieceSize())
+    const handler = () => setSize(calcPieceSize(nRows, nCols))
     window.addEventListener('resize', handler)
     return () => window.removeEventListener('resize', handler)
-  }, [])
+  }, [nRows, nCols])
   return size
 }
 
@@ -1450,11 +1466,12 @@ function lsGet(key, fallback) {
 
 // ── ルート ────────────────────────────────────────────────────────────────────
 export default function ShadowPuzzle() {
-  const pieceSize = usePieceSize()
-
   const [screen, setScreen] = useState('select')
   const [animalIndex, setAnimalIndex] = useState(0)
   const [difficulty, setDifficulty] = useState('easy')
+
+  const { nRows: diffNRows, nCols: diffNCols } = DIFFICULTY_OPTIONS.find(d => d.key === difficulty)
+  const pieceSize = usePieceSize(diffNRows, diffNCols)
 
   const [keyCount,     setKeyCount]     = useState(() => lsGet(LS.keyCount,   0))
   const [lockedStatus, setLockedStatus] = useState(() => {
