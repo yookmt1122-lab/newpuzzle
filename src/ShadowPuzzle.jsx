@@ -1041,7 +1041,10 @@ function GachaScreen({ onBack, coinCount, coinCounterRef, machineRef, onCoinTap,
               ? { transform: `translate(-50%, -50%) rotate(${arrowRotation}deg)`, animation: 'none', cursor: 'grabbing' }
               : { cursor: 'grab' }
             }
-          >↻</div>
+          >
+            <span className="gacha-turn-arrow__icon">🔄</span>
+            <span className="gacha-turn-arrow__label">まわす！</span>
+          </div>
         )}
       </div>
 
