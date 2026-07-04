@@ -6,6 +6,27 @@ import {
   playBuzz, playPop, startBgm, stopBgm, setMuted, unlockAudio,
 } from './sounds.js'
 
+// Unicode絵文字にカマキリが存在しないため専用SVGアイコンで代用
+function MantisIcon() {
+  return (
+    <svg viewBox="0 0 36 36" width="1em" height="1em" style={{ display: 'block' }} aria-hidden="true">
+      <path d="M15 7 L11 3" stroke="#558B2F" strokeWidth="1" strokeLinecap="round" fill="none" />
+      <path d="M21 7 L25 3" stroke="#558B2F" strokeWidth="1" strokeLinecap="round" fill="none" />
+      <path d="M13 17 C9 16 7 13 8 10" stroke="#558B2F" strokeWidth="2" strokeLinecap="round" fill="none" />
+      <path d="M23 17 C27 16 29 13 28 10" stroke="#558B2F" strokeWidth="2" strokeLinecap="round" fill="none" />
+      <line x1="18" y1="15" x2="18" y2="30" stroke="#689F38" strokeWidth="0.6" />
+      <path d="M14 24 L7 27" stroke="#558B2F" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M22 24 L29 27" stroke="#558B2F" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M15 30 L10 34" stroke="#558B2F" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M21 30 L26 34" stroke="#558B2F" strokeWidth="1.6" strokeLinecap="round" />
+      <ellipse cx="18" cy="22" rx="5" ry="11" fill="#7CB342" />
+      <path d="M18 6 C21 6 23 9 22 12 C21 14.5 19.5 15 18 15 C16.5 15 15 14.5 14 12 C13 9 15 6 18 6 Z" fill="#8BC34A" />
+      <circle cx="15.3" cy="10" r="1.6" fill="#1B1B1B" />
+      <circle cx="20.7" cy="10" r="1.6" fill="#1B1B1B" />
+    </svg>
+  )
+}
+
 const ANIMALS = [
   { emoji: '🐙', label: 'タコ' },
   { emoji: '🦁', label: 'ライオン' },
@@ -44,12 +65,24 @@ const ANIMALS = [
   { emoji: '🦘', label: 'カンガルー' },
   { emoji: '🦭', label: 'アザラシ' },
   { emoji: '🐺', label: 'オオカミ' },
+  { emoji: <MantisIcon />, label: 'カマキリ' },
+  { emoji: '🦥', label: 'ナマケモノ' },
+  { emoji: '🦔', label: 'ハリネズミ' },
+  { emoji: '🦡', label: 'アナグマ' },
+  { emoji: '🦨', label: 'スカンク' },
+  { emoji: '🦙', label: 'ラマ' },
+  { emoji: '🦚', label: 'クジャク' },
+  { emoji: '🦜', label: 'インコ' },
+  { emoji: '🐧', label: 'ペンギン' },
+  { emoji: '🦇', label: 'コウモリ' },
+  { emoji: '🦌', label: 'シカ' },
 ]
 const INITIAL_LOCKED = [
   false, false, false, false, false, false, false, false, false, false,
   true, true, true, true, true, true, true, true, true, true,
   true, true, true, true, true, true, true, true, true, true, true,
   true, true, true, true, true, true,
+  true, true, true, true, true, true, true, true, true, true, true,
 ]
 
 const TRAY_ITEM_GAP = 12
@@ -1506,7 +1539,9 @@ function PlayScreen({ animal, clearCount, difficulty, pieceSize, onBack, onCompl
   const cellH = pieceSize / nRows
   const snapThreshold = Math.min(cellW, cellH) * 0.8
 
-  const [transparentSet] = useState(() => detectTransparentPieces(animal.emoji, nRows, nCols))
+  const [transparentSet] = useState(() =>
+    typeof animal.emoji === 'string' ? detectTransparentPieces(animal.emoji, nRows, nCols) : new Set()
+  )
 
   const [placed, setPlaced] = useState(() =>
     Object.fromEntries(Array.from({ length: totalPieces }, (_, i) => [i, transparentSet.has(i)]))
